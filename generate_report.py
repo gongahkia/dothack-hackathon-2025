@@ -84,7 +84,7 @@ def analyze_quiz_with_ai(quiz_data):
             })
         
         analysis_prompt = f"""
-        As an educational assessment expert, analyze this quiz content and provide comprehensive insights for educators:
+        You are an educational data analyst and designer. Your goal is to create a visually engaging, student-centered report based on the quiz responses below. Focus on how students performed, what they learned, and how the assessment experience can be improved for them.
 
         Quiz Topic: {quiz_content['prompt']}
         Number of Questions: {len(quiz_content['questions'])}
@@ -92,39 +92,35 @@ def analyze_quiz_with_ai(quiz_data):
         Questions and Answers:
         {json.dumps(quiz_content['questions'], indent=2)}
 
-        Please provide a detailed analysis covering:
+        Please provide a detailed, visually-oriented analysis covering:
 
-        1. LEARNING OBJECTIVES ASSESSMENT:
-           - What specific learning objectives does this quiz assess?
-           - Are the questions well-aligned with the stated topic?
-           - What cognitive levels (Bloom's taxonomy) do the questions target?
+        1. STUDENT RESPONSE INSIGHTS:
+           - What do the student answers reveal about their understanding and misconceptions?
+           - Highlight patterns in correct/incorrect responses and what they mean for learning.
+           - Suggest ways to visually present these insights (charts, word clouds, etc.).
 
-        2. QUESTION QUALITY ANALYSIS:
-           - Assess the quality of each question (clarity, difficulty, educational value)
-           - Identify any potential issues with question construction
-           - Evaluate the effectiveness of distractors
+        2. LEARNING OUTCOMES:
+           - What key concepts did students grasp well? Where did they struggle?
+           - How did explanations help students learn from their mistakes?
+           - Recommend actionable next steps for students based on their responses.
 
-        3. CONTENT COVERAGE:
-           - What key concepts are covered?
-           - Are there any important topics missing?
-           - Is the coverage balanced across different aspects of the topic?
+        3. ENGAGEMENT & MOTIVATION:
+           - How engaging was the quiz for students? Did it promote curiosity or deeper thinking?
+           - Suggest improvements to make the assessment more motivating and student-friendly.
 
-        4. PEDAGOGICAL INSIGHTS:
-           - What misconceptions do the questions address?
-           - How well do the explanations support learning?
-           - What teaching strategies would complement this assessment?
+        4. VISUAL DESIGN SUGGESTIONS:
+           - Propose creative ways to present student performance and feedback visually in the PDF (e.g., infographics, color coding, icons).
+           - Recommend layout and design elements that make the report easy and enjoyable for students to read.
 
-        5. RECOMMENDATIONS FOR IMPROVEMENT:
-           - Specific suggestions for enhancing individual questions
-           - Ideas for additional questions to improve coverage
-           - Ways to better align with learning objectives
+        5. ACTIONABLE RECOMMENDATIONS FOR STUDENTS:
+           - Give personalized advice for students based on their quiz performance.
+           - Suggest follow-up activities, resources, or reflection prompts to deepen learning.
 
-        6. STUDENT LEARNING PREDICTIONS:
-           - Which questions might students find most challenging?
-           - What areas might need additional instruction?
-           - Suggestions for follow-up activities
+        6. TEACHER FEEDBACK:
+           - What should educators focus on in future lessons based on student responses?
+           - How can teachers use this report to support individual and group learning needs?
 
-        Format your response in clear sections with specific, actionable insights.
+        Format your response in clear, visually-structured sections. Use bullet points, headings, and design ideas. Focus on making the report useful and engaging for students, not just a summary of the quiz.
         """
         
         response = model.generate_content(analysis_prompt)
