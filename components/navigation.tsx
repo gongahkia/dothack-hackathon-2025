@@ -47,14 +47,13 @@ export function Navigation() {
             >
               Team
             </Link>
-            <Link
-              href="/legal"
-              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
-            >
-              Legal
-            </Link>
             <ThemeToggle />
-            <Button asChild className="bg-blue-600 hover:bg-blue-700">
+            <Button
+              asChild
+              size="lg"
+              className="text-white px-8 py-4 text-lg rounded-full"
+              style={{ backgroundColor: "#4E342E" }}
+            >
               <Link href="/generate">Get Started</Link>
             </Button>
           </div>

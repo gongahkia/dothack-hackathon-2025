@@ -390,3 +390,7 @@ input[type="number"] {
     transform: translateY(-20px);
   }
 }
+
+html {
+  scroll-behavior: smooth;
+}

@@ -5,11 +5,11 @@ import { Github, Linkedin, Twitter } from "lucide-react"
 
 const teamMembers = [
   {
-    name: "Dr. Sarah Chen",
+    name: "Mr. Richard Lei",
     role: "Co-Founder & CEO",
-    bio: "Former Stanford AI researcher with 10+ years in educational technology. PhD in Machine Learning from MIT.",
-    image: "/placeholder.svg?height=300&width=300",
-    skills: ["AI Strategy", "Product Vision", "EdTech"],
+    bio: "Seasoned fintech strategist with a knack for turning spreadsheets into stories. Richard brings the finance flair and startup hustle energy to every project.",
+    image: "/team/richard.jpeg",
+    skills: ["Professional", "Vibe", "Coder"],
     social: {
       linkedin: "#",
       twitter: "#",
@@ -17,11 +17,11 @@ const teamMembers = [
     },
   },
   {
-    name: "Marcus Rodriguez",
+    name: "Mr. Gabriel Ong",
     role: "Co-Founder & CTO",
-    bio: "Full-stack engineer and AI specialist. Previously led engineering teams at Google and Microsoft.",
-    image: "/placeholder.svg?height=300&width=300",
-    skills: ["AI Engineering", "System Architecture", "RAG Pipelines"],
+    bio: "A full-stack whiz who lives for clean code and late-night debugging. Gabriel builds the backbone of our platform and dreams in JavaScript.",
+    image: "/team/gabriel.jpeg",
+    skills: ["Handsome", "Healthy", "Hardworking"],
     social: {
       linkedin: "#",
       twitter: "#",
@@ -29,11 +29,11 @@ const teamMembers = [
     },
   },
   {
-    name: "Dr. Emily Watson",
+    name: "Ms. Arya Govind",
     role: "Head of AI Research",
-    bio: "NLP expert specializing in educational content analysis. Former researcher at OpenAI and DeepMind.",
-    image: "/placeholder.svg?height=300&width=300",
-    skills: ["NLP", "Content Analysis", "Model Training"],
+    bio: "Data detective by day, spreadsheet wizard by night. Arya translates messy data into meaningful insights with a sharp analytical eye.",
+    image: "/team/arya.jpeg",
+    skills: ["Analytical", "Strategic", "Calm"],
     social: {
       linkedin: "#",
       twitter: "#",
@@ -41,11 +41,11 @@ const teamMembers = [
     },
   },
   {
-    name: "James Park",
+    name: "Ms. Tan Le Xuan",
     role: "Lead Frontend Engineer",
-    bio: "UI/UX specialist with expertise in React and modern web technologies. Former Apple design team member.",
-    image: "/placeholder.svg?height=300&width=300",
-    skills: ["React", "UI/UX Design", "TypeScript"],
+    bio: "Vibe curator and design mind behind our interfaces. Le Xuan ensures everything looks good, feels smooth, and makes sense — with style.",
+    image: "/team/lexuan.jpeg",
+    skills: ["Creative", "Chill", "Empathetic"],
     social: {
       linkedin: "#",
       twitter: "#",
@@ -53,27 +53,27 @@ const teamMembers = [
     },
   },
   {
-    name: "Dr. Aisha Patel",
+    name: "Ms. Nichole Bun",
     role: "Education Specialist",
-    bio: "Former university professor and curriculum designer. Expert in learning assessment and pedagogical methods.",
-    image: "/placeholder.svg?height=300&width=300",
+    bio: "Nichole dives into datasets to uncover what really matters. She brings structure, strategy, and a whole lot of pivot tables to the team.",
+    image: "/team/nichole.jpeg",
+    skills: ["Reliable", "Perceptive", "Grounded"],
+    social: {
+      linkedin: "#",
+      twitter: "#",
+    },
+  },
+  {
+    name: "Mr. Kevan Wee and Mr. Astin Tay",
+    role: "Customer Service Officers",
+    bio: "Our go-to duo for digital transformation and soulful pep talks. With deep roots in education and automation, they make change feel doable — and even fun.",
+    image: ["/team/kevan.jpeg", "/team/astin.jpeg"],
     skills: ["Curriculum Design", "Assessment", "Pedagogy"],
     social: {
       linkedin: "#",
       twitter: "#",
     },
-  },
-  {
-    name: "Alex Thompson",
-    role: "DevOps Engineer",
-    bio: "Infrastructure and security specialist ensuring our platform scales reliably and securely.",
-    image: "/placeholder.svg?height=300&width=300",
-    skills: ["AWS", "Security", "Scalability"],
-    social: {
-      linkedin: "#",
-      github: "#",
-    },
-  },
+  }
 ]
 
 export default function TeamPage() {
@@ -83,7 +83,7 @@ export default function TeamPage() {
       <main className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-6">Meet Our Team</h1>
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-6">Meet Kitchen</h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               We're a passionate group of educators, engineers, and researchers dedicated to revolutionizing learning
               through AI.
@@ -97,13 +97,24 @@ export default function TeamPage() {
                 className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white dark:bg-gray-800"
               >
                 <CardContent className="p-8 text-center">
-                  <div className="mb-6">
+                <div className="mb-6 flex justify-center gap-4">
+                  {Array.isArray(member.image) ? (
+                    member.image.map((imgSrc, idx) => (
+                      <img
+                        key={idx}
+                        src={imgSrc}
+                        alt={`${member.name} ${idx + 1}`}
+                        className="w-24 h-24 rounded-full object-cover"
+                      />
+                    ))
+                  ) : (
                     <img
                       src={member.image || "/placeholder.svg"}
                       alt={member.name}
                       className="w-32 h-32 rounded-full mx-auto object-cover"
                     />
-                  </div>
+                  )}
+                </div>
 
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{member.name}</h3>
 
@@ -159,7 +170,7 @@ export default function TeamPage() {
             </p>
             <div className="text-center">
               <a
-                href="mailto:careers@quizgen.ai"
+                href="https://youtu.be/dQw4w9WgXcQ?si=OKUpDjV3emMYxcgg"
                 className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full transition-colors"
               >
                 View Open Positions

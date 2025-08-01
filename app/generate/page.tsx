@@ -13,7 +13,7 @@ export default function GeneratePage() {
               Upload your materials and let AI generate personalized quiz questions
             </p>
           </div>
-          <QuizBattererator />
+          <QuizBattererator/>
         </div>
       </main>
     </div>

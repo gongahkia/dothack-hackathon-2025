@@ -4,7 +4,10 @@ import { Brain, Zap, Shield, Users, FileText, Search, Upload, Database, CheckCir
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div
+      className="absolute top-0 left-0 w-full h-full bg-cover bg-center -z-10"
+      style={{ backgroundImage: "url('images/kitchen.jpg')" }}
+    >
       <Navigation />
       <main className="py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
