@@ -15,51 +15,63 @@ interface QuizQuestion {
   explanation: string
 }
 
-// Parsing function for your raw quiz text format
 function parseQuiz(rawText: string): QuizQuestion[] {
-  // Split by **Question X:** pattern
+  // Match all question headers
   const splitRegex = /\*\*Question \d+:\*\*/g
   const questionHeaders = rawText.match(splitRegex)
   if (!questionHeaders) return []
 
-  // Split text into question blocks by header
-  const questionBlocks = rawText.split(splitRegex).slice(1) // first is before first question
+  // Split into question blocks, discard text before first question
+  const questionBlocks = rawText.split(splitRegex).slice(1)
 
   const questions: QuizQuestion[] = []
 
   questionBlocks.forEach((block, idx) => {
     const number = idx + 1
 
-    // Extract stem: text after "**Stem:**" up to first option or correct answer
-    const stemMatch = block.match(/\*\*Stem:\*\*([\s\S]*?)(?=\n\s*\*\*[A-D]\.|Correct Answer:)/)
-    let stem = stemMatch ? stemMatch[1].trim() : ""
+    // Extract stem: between "**Stem:**" and before options or correct answer or end of block
+    const stemMatch = block.match(
+      /\*\*Stem:\*\*\s*([\s\S]*?)(?=(\*\*(\(?[a-dA-D]\)?[\.\)])\*\*)|Correct Answer:|$)/
+    )
+    const stem = stemMatch ? stemMatch[1].trim() : ""
 
-    // Extract options: lines start with "**A.**", "**B.**" etc.
-    const optionRegex = /\*\*([A-D])\.\*\*\s*(.+)/g
+    // Extract options: various formats like **A.**, **(a)**, **A)**, with/without parentheses
+    // Regex explanation:
+    // \*\*             : literal "**"
+    // \(?              : optional opening parenthesis "("
+    // ([a-dA-D])       : capture group for letter A-D (case-insensitive)
+    // \)?              : optional closing parenthesis ")"
+    // [\.\)]           : dot or closing parenthesis after letter
+    // \*\*             : literal "**"
+    // \s*              : optional spaces
+    // (.+)             : capture the option text (at least one char, up to end of line)
+    const optionRegex = /\*\*\(?([a-dA-D])\)?[.)]\*\*\s*(.+)/g
     const options: QuizOption[] = []
-    let match
-    while ((match = optionRegex.exec(block)) !== null) {
-      options.push({ label: match[1], text: match[2].trim() })
+
+    let optMatch
+    while ((optMatch = optionRegex.exec(block)) !== null) {
+      options.push({ label: optMatch[1].toUpperCase(), text: optMatch[2].trim() })
     }
 
-    // Get correct answer: "Correct Answer: X" (X is letter)
-    const correctMatch = block.match(/Correct Answer:\s*([A-D])/)
-    const correctAnswer = correctMatch ? correctMatch[1] : ""
+    // Extract correct answer: may be "Correct Answer: (b)" or "Correct Answer: B" or "Correct Answer: b"
+    const correctMatch = block.match(/Correct Answer:\s*\(?([a-dA-D])\)?/i)
+    const correctAnswer = correctMatch ? correctMatch[1].toUpperCase() : ""
 
-    // Explanation: text after "Explanation:" till end or next question
-    const explMatch = block.match(/Explanation:\s*([\s\S]+)/)
+    // Extract explanation text after "Explanation:" to end of block
+    const explMatch = block.match(/Explanation:\s*([\s\S]*)/)
     let explanation = explMatch ? explMatch[1].trim() : ""
 
-    // Clean up any trailing stars or whitespace from explanation
     explanation = explanation.replace(/\*+$/g, "").trim()
 
-    if (stem && options.length === 4 && correctAnswer) {
+    // Add question only if valid stem and correct answer present
+    if (stem && correctAnswer) {
       questions.push({ number, stem, options, correctAnswer, explanation })
     }
   })
 
   return questions
 }
+
 
 interface InteractiveQuizProps {
   rawText: string
