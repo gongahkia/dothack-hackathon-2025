@@ -5,5 +5,3 @@ venv
 __pycache__
 node_modules
 .next
-uploads/*
-classroom-ai.json
