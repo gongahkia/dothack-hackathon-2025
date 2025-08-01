@@ -15,7 +15,7 @@ export function Navigation() {
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center space-x-2">
             <GraduationCap className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">QuizGen</span>
+            <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">QuizBatter</span>
           </Link>
 
           {/* Desktop Navigation */}

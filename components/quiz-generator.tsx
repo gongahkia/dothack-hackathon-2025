@@ -22,7 +22,7 @@ interface QuizResponse {
   quizzes: Quiz[]
 }
 
-export function QuizGenerator() {
+export function QuizBattererator() {
   const [prompt, setPrompt] = useState("")
   const [numQuizzes, setNumQuizzes] = useState(5)
   const [questions, setQuestions] = useState("")
