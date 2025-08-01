@@ -36,7 +36,7 @@ def generate(prompt, num_quizzes, questions=None, pdf_path=None):
         print("[generate] Configured Gemini API with API key.")
 
         # Initialize Gemini Pro Model
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-pro')
         print("[generate] Initialized Gemini Pro model 'gemini-1.5-flash'.")
 
         system_prompt = """You are Dr. Sarah Chen, an expert educational psychologist and assessment specialist with 15 years of experience in curriculum development and learning analytics. You specialize in creating engaging, pedagogically sound assessments that promote deep learning and critical thinking.
