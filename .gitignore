@@ -3,4 +3,5 @@
 myenv
 venv
 __pycache__
-classroom-ai.json
+node_modules
+.next
