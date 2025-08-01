@@ -24,22 +24,11 @@ def get_quiz_data(prompt, num_quizzes, questions_str=None, file=None):
     if file is not None:
         files['file'] = (file.name, file, file.type)
     
-    try:
-        response = requests.post(url, data=data, files=files, timeout=30)
-        
-        if response.status_code == 200:
-            return response.json()
-        else:
-            st.error(f"Backend error: {response.status_code} - {response.text}")
-            return None
-    except requests.exceptions.ConnectionError:
-        st.error("Cannot connect to backend. Please make sure the backend server is running on port 5011.")
-        return None
-    except requests.exceptions.Timeout:
-        st.error("Request timed out. The backend is taking too long to respond.")
-        return None
-    except Exception as e:
-        st.error(f"Error connecting to backend: {str(e)}")
+    response = requests.post(url, data=data, files=files)
+    
+    if response.status_code == 200:
+        return response.json()
+    else:
         return None
 
 
