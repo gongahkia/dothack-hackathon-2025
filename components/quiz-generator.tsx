@@ -226,15 +226,21 @@ export function QuizBattererator() {
 
   if (rawResponse) {
     return (
-      <Card className="...">
-        <CardHeader className="...">
-          <CardTitle className="...">Quiz</CardTitle>
+      <Card className="border-0 shadow-lg bg-white dark:bg-gray-800 border dark:border-gray-700 p-6">
+        <CardHeader className="text-center pb-4">
+          <CardTitle className="text-2xl font-semibold text-gray-900 dark:text-white">
+            Quiz
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <InteractiveQuiz rawText={rawResponse} />
           <div className="mt-6 text-center">
             <Button
-              onClick={() => setRawResponse("")}
+              onClick={() => {
+                setRawResponse("")
+                setError("")
+                setQuizzes([])
+              }}
               variant="outline"
             >
               Back to Quiz Generator
