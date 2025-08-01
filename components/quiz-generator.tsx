@@ -46,117 +46,38 @@ interface ParsedQuestion {
  * Adjust the regexes if your format varies.
  */
 
-function parseRawQuiz(rawText: string): ParsedQuestion[] {
-  const lines = rawText.split('\n');
-
-  const questions: ParsedQuestion[] = [];
-  let currentQuestion: Partial<ParsedQuestion> = {};
-  let currentOptions: string[] = [];
-
-  let state: 'none' | 'stem' | 'options' | 'correct' | 'explanation' = 'none';
-
-  // Helper to finalize the current question and store it if valid
-  function finalizeCurrentQuestion() {
-    if (currentQuestion.stem && currentOptions.length > 0 && currentQuestion.correctAnswer) {
-      // Clean and label options: assign labels A, B, C, ...
-      const optionLabels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      const cleanedOptions = currentOptions.map((optLine, idx) => {
-        const cleaned = optLine.replace(/^(\*+)?[\(\[]?[a-zA-Z][\)\].:]?\*?\s*/i, '').trim();
-        return { label: optionLabels[idx], text: cleaned };
-      });
-
-      questions.push({
-        stem: currentQuestion.stem,
-        options: cleanedOptions,
-        correctAnswer: currentQuestion.correctAnswer.toUpperCase(),
-        explanation: currentQuestion.explanation || '',
-      });
-    } else {
-      // Optional: log incomplete question details for debugging
-      console.warn('Skipping incomplete question:', currentQuestion);
-    }
-    // Reset for next question
-    currentQuestion = {};
-    currentOptions = [];
-    state = 'none';
+function parseRawQuiz(rawJSON: string): ParsedQuestion[] {
+  let parsedArray;
+  try {
+    parsedArray = JSON.parse(rawJSON);
+  } catch (err) {
+    console.error("Failed to parse JSON:", err);
+    return [];
   }
 
-  for (let line of lines) {
-    const trimmedLower = line.trim().toLowerCase();
-
-    // Detect question start line
-    if (/question\s*\d+/i.test(trimmedLower)) {
-      // If already parsing a question, finalize it first
-      if (state !== 'none') {
-        finalizeCurrentQuestion();
-      }
-      state = 'none'; // reset but about to parse a new question
-      currentQuestion = {};
-      currentOptions = [];
-      continue; // question line itself doesn't contain data we need to store
-    }
-
-    // Detect stem line
-    else if (trimmedLower.includes('stem')) {
-      state = 'stem';
-      // Extract stem text after “stem” marker (remove markdown and ‘stem’ label)
-      const stemText = line.replace(/.*stem\s*[:\-]*/i, '').trim();
-      currentQuestion.stem = stemText;
-    }
-
-    // Detect correct answer line
-    else if (trimmedLower.includes('correct answer')) {
-      state = 'correct';
-      // Extract the indicated letter after 'correct answer' (e.g., 'B', '(b)', etc.)
-      const match = line.match(/correct answer\s*[:\-]*\s*\(?([a-zA-Z])\)?/i);
-      if (match) {
-        currentQuestion.correctAnswer = match[1].toUpperCase();
-      } else {
-        console.warn('Failed to parse correct answer line:', line);
-        currentQuestion.correctAnswer = '';
-      }
-    }
-
-    // Detect explanation line
-    else if (trimmedLower.includes('explanation')) {
-      state = 'explanation';
-      // Extract explanation after marker
-      const explText = line.replace(/.*explanation\s*[:\-]*/i, '').trim();
-      currentQuestion.explanation = explText;
-    }
-
-    // Parse lines depending on current state
-    else {
-      if (state === 'stem') {
-        // Append to stem if multiline
-        currentQuestion.stem = (currentQuestion.stem ? currentQuestion.stem + ' ' : '') + line.trim();
-      } else if (state === 'options') {
-        currentOptions.push(line);
-      } else if (state === 'correct') {
-        // sometimes options go after stem and before correct answer,
-        // so any line between stem and correct answer lines should be options
-        currentOptions.push(line);
-      } else if (state === 'explanation') {
-        // Append to explanation if multiline
-        currentQuestion.explanation = (currentQuestion.explanation ? currentQuestion.explanation + ' ' : '') + line.trim();
-      } else {
-        // We are between stem and correct answer? Allow options anytime if no state
-        if (currentQuestion.stem && !currentQuestion.correctAnswer) {
-          state = 'options';
-          currentOptions.push(line);
-        }
-      }
-    }
+  if (!Array.isArray(parsedArray)) {
+    console.error("Parsed JSON is not an array");
+    return [];
   }
 
-  // Finalize last question if any
-  if (state !== 'none' && currentQuestion.stem) {
-    finalizeCurrentQuestion();
-  }
+  return parsedArray.map((item, idx) => {
+    const optionsArray: { label: string; text: string }[] = [];
 
-  console.log(`Parsed ${questions.length} questions.`);
+    if (item.options && typeof item.options === "object") {
+      for (const [key, value] of Object.entries(item.options)) {
+        optionsArray.push({ label: key.toLowerCase(), text: String(value) });
+      }
+      // Optional: sort by label a,b,c,d
+      optionsArray.sort((a, b) => a.label.localeCompare(b.label));
+    }
 
-  return questions;
+    return {
+      stem: item.question ?? `Question ${idx + 1}`,
+      options: optionsArray,
+      correctAnswer: (item.correct ?? "").toLowerCase(),
+      explanation: item.explanation ?? "",
+    };
+  });
 }
 
 function RawQuizResponseDisplay({ rawText }: RawQuizResponseDisplayProps) {
