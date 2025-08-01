@@ -45,41 +45,69 @@ interface ParsedQuestion {
  *
  * Adjust the regexes if your format varies.
  */
+
 function parseRawQuiz(rawText: string): ParsedQuestion[] {
-  // Split the text into question sections by "**Question X:**" headings
-  const questionSplits = rawText.split(/(\*\*Question \d+:\*\*)/).filter(Boolean)
+  // Split into question chunks, preserving Question X header per chunk
+  const questionChunks = rawText.split(/(?=\*\*Question \d+:\*\*)/).filter(Boolean)
 
   const questions: ParsedQuestion[] = []
 
-  for (let i = 0; i < questionSplits.length; i++) {
-    const header = questionSplits[i].match(/\*\*Question \d+:\*\*/)
-    if (header) {
-      const content = questionSplits[i + 1] || ""
-      i++ // Skip the content chunk next iteration since we already handled it here
+  questionChunks.forEach((chunk, idx) => {
+    const number = idx + 1
 
-      // Extract stem text after "**Stem:**"
-      const stemMatch = content.match(/\*\*Stem:\*\*\s*([\s\S]*?)(?=\*\(\w\)\*\*|\*\*Correct Answer:\*\*|\*\*Explanation:\*\*|$)/)
-      const stem = stemMatch ? stemMatch[1].trim() : ""
+    // Extract stem: after "**Stem:**" up to before options or correct answer or explanation
+    const stemMatch = chunk.match(/\*\*Stem:\*\*\s*([\s\S]*?)(?=(Correct Answer:|\*\*Explanation:\*\*|$))/)
+    const stem = stemMatch ? stemMatch[1].trim() : ""
 
-      // Extract options - lines starting "**(a)** ..." to "**(d)** ..."
-      const optionRegex = /\*\*\(([a-d])\)\*\*\s*([^\n]+)/g
-      const options: { label: string; text: string }[] = []
-      let optMatch: RegExpExecArray | null
-      while ((optMatch = optionRegex.exec(content)) !== null) {
-        options.push({ label: optMatch[1], text: optMatch[2].trim() })
+    // Extract correct answer line: e.g. "Correct Answer: (b)" or "Correct Answer: b" or "Correct Answer: B"
+    const correctMatch = chunk.match(/Correct Answer:\s*\(?([a-dA-D])\)?/)
+    const correctAnswer = correctMatch ? correctMatch[1].toLowerCase() : ""
+
+    // Extract explanation (everything after "**Explanation:**")
+    const explMatch = chunk.match(/\*\*Explanation:\*\*\s*([\s\S]*)/)
+    const explanation = explMatch ? explMatch[1].trim() : ""
+
+    // Extract options:
+    // - Extract text between stem and correct answer/explanation line, split by newline
+    // - Remove empty lines, remove lines that contain Stem or Question headers
+
+    // Find text block between stem end and Correct Answer or Explanation start
+    let optionsText = ""
+    const optionsStartIndex = stemMatch ? stemMatch.index! + stemMatch[0].length : 0
+    // Find index of Correct Answer or Explanation or end
+    const correctAnswerIndex = chunk.search(/Correct Answer:/)
+    const explanationIndex = chunk.search(/\*\*Explanation:\*\*/)
+    const endIndex = Math.min(
+      correctAnswerIndex === -1 ? chunk.length : correctAnswerIndex,
+      explanationIndex === -1 ? chunk.length : explanationIndex
+    )
+
+    optionsText = chunk.substring(optionsStartIndex, endIndex)
+
+    // Split by lines, clean and filter
+    const optionLines = optionsText
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+
+    // Map options to label/text: 
+    // Since you want to ignore the marker, assign labels by order: a, b, c, d
+    const optionLabels = ['a', 'b', 'c', 'd']
+    const options: { label: string; text: string }[] = []
+
+    optionLines.forEach((line, index) => {
+      if (index < optionLabels.length) {
+        // Remove any leading formatting like "*", "**", "(", ")" etc.
+        // Also strip option prefix if present (like (a), [a], etc.)
+        const cleanedText = line.replace(/^(\*+)?\(?[a-dA-D]\)?\.?\*?\s*/, '').trim()
+        options.push({ label: optionLabels[index], text: cleanedText })
       }
+    })
 
-      // Extract correct answer e.g. "**Correct Answer:** (b)"
-      const correctMatch = content.match(/\*\*Correct Answer:\*\*\s*\(([a-d])\)/)
-      const correctAnswer = correctMatch ? correctMatch[1] : ""
-
-      // Extract explanation text after "**Explanation:**"
-      const explanationMatch = content.match(/\*\*Explanation:\*\*\s*([\s\S]*)/)
-      const explanation = explanationMatch ? explanationMatch[1].trim() : ""
-
+    if (stem && options.length && correctAnswer) {
       questions.push({ stem, options, correctAnswer, explanation })
     }
-  }
+  })
 
   return questions
 }
@@ -233,7 +261,7 @@ export function QuizBattererator() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <InteractiveQuiz rawText={rawResponse} />
+          <RawQuizResponseDisplay rawText={rawResponse} />
           <div className="mt-6 text-center">
             <Button
               onClick={() => {
