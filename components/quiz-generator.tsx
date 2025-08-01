@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Upload, FileText, Loader2, CheckCircle, Presentation } from "lucide-react"
 import { QuizDisplay } from "@/components/quiz-display"
+import { InteractiveQuiz } from "@/components/interactive-quiz" 
 
 interface Quiz {
   Question: string
@@ -220,21 +221,15 @@ export function QuizBattererator() {
 
 if (rawResponse) {
   return (
-    <Card className="border-0 shadow-lg bg-white dark:bg-gray-800 border dark:border-gray-700 p-6">
-      <CardHeader className="text-center pb-4">
-        <CardTitle className="text-2xl font-semibold text-gray-900 dark:text-white">
-          Raw AI Quiz Response
-        </CardTitle>
+    <Card className="...">
+      <CardHeader className="...">
+        <CardTitle className="...">Quiz</CardTitle>
       </CardHeader>
       <CardContent>
-        <RawQuizResponseDisplay rawText={rawResponse} />
+        <InteractiveQuiz rawText={rawResponse} />
         <div className="mt-6 text-center">
           <Button
-            onClick={() => {
-              setRawResponse("")
-              setError("")
-              setQuizzes([])
-            }}
+            onClick={() => setRawResponse("")}
             variant="outline"
           >
             Back to Quiz Generator
