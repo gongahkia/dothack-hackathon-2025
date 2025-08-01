@@ -7,6 +7,12 @@ import { ArrowRight, BookOpen, Brain, Zap } from "lucide-react"
 export function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+        <div className="absolute inset-0 opacity-30">
+          <img src="/images/hero-background.png" alt="" className="w-full h-full object-cover" />
+        </div>
+      </div>
 
       {/* Floating Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

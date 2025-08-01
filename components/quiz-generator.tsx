@@ -1,6 +1,8 @@
 "use client"
 
-import React, { useState } from "react"
+import type React from "react"
+
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -20,60 +22,6 @@ interface QuizResponse {
   quizzes: Quiz[]
 }
 
-interface ParsedQuestion {
-  stem: string
-  options: { label: string; text: string }[]
-  correctAnswer: string
-  explanation: string
-}
-
-/**
- * A heuristic parser for raw AI quiz text, expecting a format like:
- * 
- * **Question X:**
- * 
- * **Stem:** ...
- * **(a)** ...
- * **(b)** ...
- * **Correct Answer:** (b)
- * **Explanation:** ...
- *
- * Adjust the regexes if your format varies.
- */
-
-function parseRawQuiz(rawJSON: string): ParsedQuestion[] {
-  let parsedArray;
-  try {
-    parsedArray = JSON.parse(rawJSON);
-  } catch (err) {
-    console.error("Failed to parse JSON:", err);
-    return [];
-  }
-
-  if (!Array.isArray(parsedArray)) {
-    console.error("Parsed JSON is not an array");
-    return [];
-  }
-
-  return parsedArray.map((item, idx) => {
-    const optionsArray: { label: string; text: string }[] = [];
-
-    if (item.options && typeof item.options === "object") {
-      for (const [key, value] of Object.entries(item.options)) {
-        optionsArray.push({ label: key.toLowerCase(), text: String(value) });
-      }
-      optionsArray.sort((a, b) => a.label.localeCompare(b.label));
-    }
-
-    return {
-      stem: item.question ?? `Question ${idx + 1}`,
-      options: optionsArray,
-      correctAnswer: (item.correct ?? "").toLowerCase(),
-      explanation: item.explanation ?? "",
-    };
-  });
-}
-
 export function QuizBattererator() {
   const [prompt, setPrompt] = useState("")
   const [numQuizzes, setNumQuizzes] = useState(5)
@@ -82,7 +30,6 @@ export function QuizBattererator() {
   const [slidesFile, setSlidesFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
-  const [rawResponse, setRawResponse] = useState<string>("")
   const [error, setError] = useState("")
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,106 +47,62 @@ export function QuizBattererator() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
 
     if (!prompt.trim()) {
-      setError("Please provide lecture content or topic");
-      return;
+      setError("Please provide lecture content or topic")
+      return
     }
 
-    setIsLoading(true);
-    setError("");
-    setRawResponse("");
-    setQuizzes([]);
+    setIsLoading(true)
+    setError("")
+    setQuizzes([])
 
     try {
-      const formData = new FormData();
-      formData.append("prompt", prompt);
-      formData.append("num_quizzes", numQuizzes.toString());
+      const formData = new FormData()
+      formData.append("prompt", prompt)
+      formData.append("num_quizzes", numQuizzes.toString())
 
       if (questions.trim()) {
-        formData.append("questions", questions);
+        formData.append("questions", questions)
       }
 
+      // Add slides file with priority (if both files are uploaded, slides take precedence)
       if (slidesFile) {
-        formData.append("file", slidesFile);
+        formData.append("file", slidesFile)
       } else if (file) {
-        formData.append("file", file);
+        formData.append("file", file)
       }
 
       const response = await fetch("http://localhost:5011/generate-quiz", {
         method: "POST",
         body: formData,
-      });
+      })
 
-      const text = await response.text();
+      const data: QuizResponse | { error: string } = await response.json()
 
       if (!response.ok) {
-        throw new Error(text || "Failed to generate quiz");
+        throw new Error("error" in data ? data.error : "Failed to generate quiz")
       }
 
-      // Parse outer object
-      const outer = JSON.parse(text);
-
-      if (!outer.raw_response) {
-        throw new Error("Response missing 'raw_response' field");
+      if ("quizzes" in data) {
+        setQuizzes(data.quizzes)
       }
-
-      // Parse inner JSON string with quiz array
-      const quizArray = JSON.parse(outer.raw_response);
-
-      if (!Array.isArray(quizArray) || quizArray.length === 0) {
-        throw new Error("No quiz questions parsed from response");
-      }
-
-      // Map quizArray into ParsedQuestion types
-      const parsedQuestions = quizArray.map((item: any, idx: number) => {
-        const optionsArray: { label: string; text: string }[] = [];
-
-        if (item.options && typeof item.options === "object") {
-          for (const [key, value] of Object.entries(item.options)) {
-            optionsArray.push({ label: key.toLowerCase(), text: String(value) });
-          }
-          optionsArray.sort((a, b) => a.label.localeCompare(b.label));
-        }
-
-        return {
-          stem: item.question ?? `Question ${idx + 1}`,
-          options: optionsArray,
-          correctAnswer: (item.correct ?? "").toLowerCase(),
-          explanation: item.explanation ?? "",
-        };
-      });
-
-      console.log("Parsed questions:", parsedQuestions);
-      const quizArray2: Quiz[] = parsedQuestions.map(q => ({
-        Question: q.stem,
-        Options: q.options.map(opt => opt.text),
-        Correct: q.correctAnswer,
-        Explanation: q.explanation,
-      }));
-      setQuizzes(quizArray2);
-      setRawResponse("");
-
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred");
+      setError(err instanceof Error ? err.message : "An unexpected error occurred")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
-
-  if (quizzes.length > 0) {
-    console.log("Rendering QuizDisplay with quizzes:", quizzes);
-    return <QuizDisplay quizzes={quizzes} onReset={() => setQuizzes([])} />;
   }
 
-  // Default: show the quiz generation form
+  if (quizzes.length > 0) {
+    return <QuizDisplay quizzes={quizzes} onReset={() => setQuizzes([])} />
+  }
+
   return (
     <Card className="border-0 shadow-lg bg-white dark:bg-gray-800 border dark:border-gray-700">
       <CardHeader className="text-center pb-8">
-        <CardTitle className="text-2xl font-semibold text-gray-900 dark:text-white">
-          Quiz Generation Form
-        </CardTitle>
+        <CardTitle className="text-2xl font-semibold text-gray-900 dark:text-white">Quiz Generation Form</CardTitle>
       </CardHeader>
       <CardContent className="space-y-8">
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -207,10 +110,7 @@ export function QuizBattererator() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Lecture Content */}
             <div className="space-y-2">
-              <Label
-                htmlFor="prompt"
-                className="text-base font-medium text-gray-900 dark:text-white"
-              >
+              <Label htmlFor="prompt" className="text-base font-medium text-gray-900 dark:text-white">
                 Lecture Content or Topic *
               </Label>
               <Textarea
@@ -225,10 +125,7 @@ export function QuizBattererator() {
 
             {/* Slides Upload */}
             <div className="space-y-2">
-              <Label
-                htmlFor="slidesFile"
-                className="text-base font-medium text-gray-900 dark:text-white"
-              >
+              <Label htmlFor="slidesFile" className="text-base font-medium text-gray-900 dark:text-white">
                 Upload Your Slides
               </Label>
               <div className="border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-300 dark:hover:border-gray-500 transition-colors bg-gray-50 dark:bg-gray-700/50 min-h-40 flex flex-col justify-center">
@@ -245,12 +142,8 @@ export function QuizBattererator() {
                       <>
                         <CheckCircle className="w-10 h-10 text-green-500" />
                         <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {slidesFile.name}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Click to change slides
-                          </p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{slidesFile.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Click to change slides</p>
                         </div>
                       </>
                     ) : (
@@ -260,9 +153,7 @@ export function QuizBattererator() {
                           <p className="text-sm font-medium text-gray-900 dark:text-white">
                             Upload Presentation Slides
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            PowerPoint, PDF, Keynote supported
-                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">PowerPoint, PDF, Keynote supported</p>
                         </div>
                       </>
                     )}
@@ -274,17 +165,14 @@ export function QuizBattererator() {
 
           {/* Number of Quizzes */}
           <div className="space-y-2">
-            <Label
-              htmlFor="numQuizzes"
-              className="text-base font-medium text-gray-900 dark:text-white"
-            >
+            <Label htmlFor="numQuizzes" className="text-base font-medium text-gray-900 dark:text-white">
               Number of Questions *
             </Label>
             <Input
               id="numQuizzes"
               type="number"
-              min={1}
-              max={20}
+              min="1"
+              max="20"
               value={numQuizzes}
               onChange={(e) => setNumQuizzes(Number.parseInt(e.target.value) || 5)}
               className="border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white max-w-xs"
@@ -294,10 +182,7 @@ export function QuizBattererator() {
 
           {/* Student Questions */}
           <div className="space-y-2">
-            <Label
-              htmlFor="questions"
-              className="text-base font-medium text-gray-900 dark:text-white"
-            >
+            <Label htmlFor="questions" className="text-base font-medium text-gray-900 dark:text-white">
               Specific Questions to Cover (Optional)
             </Label>
             <Textarea
@@ -311,10 +196,7 @@ export function QuizBattererator() {
 
           {/* Additional Materials Upload */}
           <div className="space-y-2">
-            <Label
-              htmlFor="file"
-              className="text-base font-medium text-gray-900 dark:text-white"
-            >
+            <Label htmlFor="file" className="text-base font-medium text-gray-900 dark:text-white">
               Upload Additional Materials (Optional)
             </Label>
             <div className="border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-300 dark:hover:border-gray-500 transition-colors bg-gray-50 dark:bg-gray-700/50">
@@ -331,12 +213,8 @@ export function QuizBattererator() {
                     <>
                       <CheckCircle className="w-12 h-12 text-green-500" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {file.name}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Click to change file
-                        </p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{file.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Click to change file</p>
                       </div>
                     </>
                   ) : (

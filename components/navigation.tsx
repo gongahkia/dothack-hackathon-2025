@@ -14,11 +14,8 @@ export function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center space-x-2">
-          <img
-            src="images/quizbatter.png"
-            alt="QuizBatter Logo"
-            className="h-13 w-auto"
-          />
+            <GraduationCap className="h-8 w-8 text-blue-600" />
+            <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">QuizBatter</span>
           </Link>
 
           {/* Desktop Navigation */}
