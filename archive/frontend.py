@@ -66,26 +66,39 @@ def upload_student_questions(text_file):
 def generate_comprehensive_report():
     """Generate comprehensive report using generate_report.py"""
     try:
-        # Check if quiz response file exists
-        if not os.path.exists("quiz_response.json"):
-            st.error("❌ No quiz response found. Please generate a quiz first.")
+        # Debug: Print absolute path for quiz_response.json
+
+        # Use project root for file paths
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        quiz_json_path = os.path.join(project_root, "quiz_response.json")
+        feedback_csv_path = os.path.join(project_root, "dbtt_class_feedback.csv")
+        print(f"[DEBUG] Checking for quiz_response.json at: {quiz_json_path}")
+
+        # Retry logic for file existence (handle file system delays)
+        import time
+        max_attempts = 5
+        for attempt in range(max_attempts):
+            if os.path.exists(quiz_json_path) and os.path.getsize(quiz_json_path) > 0:
+                break
+            time.sleep(0.3)
+        else:
+            st.error(f"❌ No quiz response found at {quiz_json_path}. Please generate a quiz first.")
             return False
-        
+
         # Check if feedback CSV exists
-        if not os.path.exists("dbtt_class_feedback.csv"):
-            st.error("❌ No feedback CSV found. Please ensure dbtt_class_feedback.csv is available.")
+        if not os.path.exists(feedback_csv_path):
+            st.error(f"❌ No feedback CSV found at {feedback_csv_path}. Please ensure dbtt_class_feedback.csv is available.")
             return False
-        
+
         with st.spinner("📊 Generating comprehensive report..."):
-            # Run the report generation script
             python_path = sys.executable
             result = subprocess.run(
-                [python_path, "generate_report.py"],
+                [python_path, os.path.join(project_root, "generate_report.py")],
                 capture_output=True,
                 text=True,
-                timeout=120  # 2 minute timeout
+                timeout=120
             )
-        
+
         if result.returncode == 0:
             st.success("✅ Comprehensive report generated successfully!")
             st.info("📄 Report saved as: comprehensive_class_report.pdf")
@@ -93,7 +106,7 @@ def generate_comprehensive_report():
         else:
             st.error(f"❌ Report generation failed: {result.stderr}")
             return False
-            
+
     except subprocess.TimeoutExpired:
         st.error("⏰ Report generation timed out. Please try again.")
         return False

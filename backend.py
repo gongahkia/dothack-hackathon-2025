@@ -209,9 +209,9 @@ def generate_quiz():
                 
                 with open("quiz_response.json", "w", encoding="utf-8") as f:
                     json.dump(quiz_data, f, indent=2, ensure_ascii=False)
-                
-                print(f"✅ Quiz response saved to quiz_response.json")
-                
+                    f.flush()
+                    os.fsync(f.fileno())
+                print(f"✅ Quiz response saved to quiz_response.json (flushed)")
                 return jsonify(parsed_result)
             except json.JSONDecodeError as e:
                 print(f"JSON parsing error: {str(e)}")
@@ -226,4 +226,4 @@ def generate_quiz():
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5011)
+    app.run(port=5011)
