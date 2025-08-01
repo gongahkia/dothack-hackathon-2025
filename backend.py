@@ -88,7 +88,17 @@ If student questions were provided, incorporate those concepts and address any k
         response_text = response.text
         print("[generate] Received response from AI.")
 
-        json_match = re.search(r'\[.*\]', response_text, re.DOTALL)
+        json_match = re.search(r'(\[.*\])', response_text, re.DOTALL)
+        if json_match:
+            # Try to parse the matched JSON section
+            candidate_json = json_match.group(1)
+            try:
+                parsed = json.loads(candidate_json)
+                response_text = candidate_json
+            except json.JSONDecodeError:
+                # If parse fails, keep original text to trigger error downstream
+                pass
+
         if json_match:
             response_text = json_match.group(0)
             print("[generate] Extracted JSON array from AI response.")
@@ -148,15 +158,8 @@ def generate_quiz():
                 os.remove(pdf_path)
                 print(f"[generate_quiz] Uploaded file cleaned up from disk: {pdf_path}")
 
-            print("[generate_quiz] Raw AI response received. Attempting to parse JSON...")
-            try:
-                parsed_result = json.loads(result)
-                print("[generate_quiz] JSON parsed successfully.")
-                return jsonify(parsed_result)
-            except json.JSONDecodeError as e:
-                print(f"[generate_quiz][Error] JSON parsing error: {str(e)}")
-                print(f"[generate_quiz][Error] AI response content (truncated): {result[:200]}...")
-                return jsonify({'error': f'Invalid JSON response from AI. Raw response: {result[:200]}...'}), 500
+                print("[generate_quiz] Raw AI response received. Returning raw text without JSON parsing.")
+                return jsonify({'raw_response': result})
 
         except Exception as e:
             print(f"[generate_quiz][Error] Exception in generate function: {str(e)}")
