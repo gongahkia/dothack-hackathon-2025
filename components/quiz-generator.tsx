@@ -168,8 +168,8 @@ export function QuizBattererator() {
 
     setIsLoading(true)
     setError("")
-    setQuizzes([])
     setRawResponse("")
+    setQuizzes([])
 
     try {
       const formData = new FormData()
@@ -180,7 +180,6 @@ export function QuizBattererator() {
         formData.append("questions", questions)
       }
 
-      // Use slides file first if available
       if (slidesFile) {
         formData.append("file", slidesFile)
       } else if (file) {
@@ -192,18 +191,27 @@ export function QuizBattererator() {
         body: formData,
       })
 
-      const data: QuizResponse | { error: string; raw_response?: string } =
-        await response.json()
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error("error" in data ? data.error : "Failed to generate quiz")
+        throw new Error(data?.error || "Failed to generate quiz")
       }
 
-      setRawResponse(data.raw_response)
-
-      if ("quizzes" in data) {
-        setQuizzes(data.quizzes)
+      // Always parse whatever text output is available
+      // Prefer raw_response, else try quizzes if string, else fallback to stringified data
+      let quizText = ""
+      if (typeof data === "string") {
+        quizText = data
+      } else if ("raw_response" in data && typeof data.raw_response === "string") {
+        quizText = data.raw_response
+      } else if ("quizzes" in data && typeof data.quizzes === "string") {
+        quizText = data.quizzes
+      } else {
+        quizText = JSON.stringify(data)
       }
+
+      setRawResponse(quizText)
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
     } finally {
