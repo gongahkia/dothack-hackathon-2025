@@ -1,9 +1,20 @@
 import streamlit as st
 import requests
+import subprocess
+import os
+import sys
 
 def format_option(opt):
     letter, text = opt
     return f"{letter}: {text}"
+
+# Function to check backend health
+def check_backend_health():
+    try:
+        response = requests.get("http://127.0.0.1:5011/", timeout=5)
+        return response.status_code == 200
+    except:
+        return False
 
 # Function to make the POST request to the backend using form-data
 def get_quiz_data(prompt, num_quizzes, questions_str=None, file=None):
@@ -25,7 +36,8 @@ def get_quiz_data(prompt, num_quizzes, questions_str=None, file=None):
         files['file'] = (file.name, file, file.type)
     
     try:
-        response = requests.post(url, data=data, files=files, timeout=30)
+        with st.spinner("Generating quiz questions..."):
+            response = requests.post(url, data=data, files=files, timeout=60)
         
         if response.status_code == 200:
             return response.json()
@@ -33,13 +45,14 @@ def get_quiz_data(prompt, num_quizzes, questions_str=None, file=None):
             st.error(f"Backend error: {response.status_code} - {response.text}")
             return None
     except requests.exceptions.ConnectionError:
-        st.error("Cannot connect to backend. Please make sure the backend server is running on port 5011.")
+        st.error("❌ Cannot connect to backend. Please make sure the backend server is running on port 5011.")
+        st.info("💡 To start the backend, run: `python backend.py`")
         return None
     except requests.exceptions.Timeout:
-        st.error("Request timed out. The backend is taking too long to respond.")
+        st.error("⏰ Request timed out. The backend is taking too long to respond.")
         return None
     except Exception as e:
-        st.error(f"Error connecting to backend: {str(e)}")
+        st.error(f"❌ Error connecting to backend: {str(e)}")
         return None
 
 
@@ -49,6 +62,44 @@ def upload_student_questions(text_file):
         questions = content.splitlines()
         return questions
     return None
+
+def generate_comprehensive_report():
+    """Generate comprehensive report using generate_report.py"""
+    try:
+        # Check if quiz response file exists
+        if not os.path.exists("quiz_response.json"):
+            st.error("❌ No quiz response found. Please generate a quiz first.")
+            return False
+        
+        # Check if feedback CSV exists
+        if not os.path.exists("dbtt_class_feedback.csv"):
+            st.error("❌ No feedback CSV found. Please ensure dbtt_class_feedback.csv is available.")
+            return False
+        
+        with st.spinner("📊 Generating comprehensive report..."):
+            # Run the report generation script
+            python_path = sys.executable
+            result = subprocess.run(
+                [python_path, "generate_report.py"],
+                capture_output=True,
+                text=True,
+                timeout=120  # 2 minute timeout
+            )
+        
+        if result.returncode == 0:
+            st.success("✅ Comprehensive report generated successfully!")
+            st.info("📄 Report saved as: comprehensive_class_report.pdf")
+            return True
+        else:
+            st.error(f"❌ Report generation failed: {result.stderr}")
+            return False
+            
+    except subprocess.TimeoutExpired:
+        st.error("⏰ Report generation timed out. Please try again.")
+        return False
+    except Exception as e:
+        st.error(f"❌ Error generating report: {str(e)}")
+        return False
 
 # Initialize session state variables if they don't exist.
 if "page" not in st.session_state:
@@ -84,11 +135,23 @@ if st.session_state["page"] == "final":
             st.markdown("---")
             i += 1
         st.write(f"**Your Score: {score} out of {len(quiz_data)}**")
-    if st.button("Restart"):
-        st.session_state["page"] = "generator"
-        st.session_state["quiz_data"] = []
-        st.session_state["user_answers"] = {}
-        st.rerun()
+    
+    # Report Generation Section
+    st.markdown("---")
+    st.subheader("📊 Generate Comprehensive Report")
+    st.write("Create a detailed report analyzing the quiz content and class feedback.")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Generate Report", type="primary"):
+            generate_comprehensive_report()
+    
+    with col2:
+        if st.button("Restart"):
+            st.session_state["page"] = "generator"
+            st.session_state["quiz_data"] = []
+            st.session_state["user_answers"] = {}
+            st.rerun()
 
 
 # interactive quiz view
@@ -119,6 +182,16 @@ elif st.session_state["page"] == "quiz":
 else:
     # Quiz generation view
     st.title("Quiz Generator")
+    
+    # Backend status indicator
+    backend_status = check_backend_health()
+    if backend_status:
+        st.success("✅ Backend is running and ready")
+    else:
+        st.error("❌ Backend is not running")
+        st.info("💡 Please start the backend server first: `python backend.py`")
+        st.stop()
+    
     prompt = st.text_input("Enter the quiz prompt", "quiz me about digital transformation")
     num_quizzes = st.number_input("Number of questions", min_value=1, max_value=10, value=3, step=1)
     
@@ -128,15 +201,16 @@ else:
     # File uploader for an optional file upload
     file = st.file_uploader("Upload a file (optional)")
     
-    if st.button("Generate Quiz"):
+    if st.button("Generate Quiz", type="primary"):
         if prompt and num_quizzes:
             questions = upload_student_questions(questions)
             quiz_data = get_quiz_data(prompt, num_quizzes, questions, file)
             if quiz_data:
+                st.success(f"✅ Successfully generated {len(quiz_data)} quiz questions!")
                 st.session_state.quiz_data = quiz_data
                 st.session_state["page"] = "quiz"
                 st.rerun()
             else:
-                st.error("Error generating quizzes. Please check the backend.")
+                st.error("❌ Error generating quizzes. Please check the backend logs for details.")
         else:
-            st.error("Please provide both a prompt and a number of quizzes.")
+            st.error("❌ Please provide both a prompt and a number of quizzes.")

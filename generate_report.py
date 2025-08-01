@@ -1,17 +1,41 @@
+import json
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from wordcloud import WordCloud
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, PageBreak, KeepTogether
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
 import string
 import os
 import re
+from datetime import datetime
+from collections import Counter, defaultdict
+import google.generativeai as genai
+import matplotlib.pyplot as plt
+import seaborn as sns
+from io import BytesIO
+import base64
 
 # --- SETTINGS ---
-file_path = "dbtt_class_feedback.csv"  # Adjust path if needed
+quiz_file_path = "quiz_response.json"
+feedback_file_path = "dbtt_class_feedback.csv"
+output_filename = "comprehensive_class_report.pdf"
+
+# Configure Gemini API (you'll need to set your API key)
+
+# --- Configure Gemini API globally ---
+try:
+    with open('classroom-ai.json', 'r') as f:
+        config = json.load(f)
+    genai.configure(api_key=config['gemini_api_key'])
+except Exception as e:
+    print(f"ERROR: Failed to configure Gemini API – {e}")
+    # Optionally: exit early or raise
+
+
 stop_words = set("""
 a about above after again against all am an and any are aren't as at be because been before being below between
 both but by can't cannot could couldn't did didn't do does doesn't doing don't down during each few for from
@@ -26,177 +50,721 @@ you'd you'll you're you've your yours yourself yourselves
 
 def sanitize_filename(filename):
     """Convert a string into a safe filename by removing special characters."""
-    # Replace spaces and special characters with underscores
     safe_name = re.sub(r'[^a-zA-Z0-9]', '_', filename)
-    # Remove multiple consecutive underscores
     safe_name = re.sub(r'_+', '_', safe_name)
-    # Remove leading/trailing underscores
     safe_name = safe_name.strip('_')
     return safe_name
 
-# --- PREPROCESSING ---
 def preprocess_text(text):
-    if pd.isna(text):
+    """Preprocess text for word frequency analysis."""
+    if pd.isna(text) or not text:
         return ""
-    text = text.lower()
+    text = str(text).lower()
     text = text.translate(str.maketrans('', '', string.punctuation))
-    return ' '.join([word for word in text.split() if word not in stop_words])
+    return ' '.join([word for word in text.split() if word not in stop_words and len(word) > 2])
 
-# --- LOAD DATA ---
-df = pd.read_csv(file_path, encoding="ISO-8859-1")
-open_ended_cols = df.columns[:5]
-numeric_cols = df.columns[5:]
-df_cleaned = df.copy()
+def analyze_quiz_with_ai(quiz_data):
+    """Use Gemini to analyze quiz content and provide educational insights."""
+    try:
+        model = genai.GenerativeModel('gemini-2.5-pro')
+        
+        # Prepare quiz content for analysis
+        quiz_content = {
+            "prompt": quiz_data.get('prompt', ''),
+            "questions": []
+        }
+        
+        for i, quiz in enumerate(quiz_data['quiz_questions'], 1):
+            quiz_content["questions"].append({
+                "number": i,
+                "question": quiz['question'],
+                "options": quiz.get('options', {}),
+                "correct": quiz.get('correct', ''),
+                "explanation": quiz['explanation']
+            })
+        
+        analysis_prompt = f"""
+        As an educational assessment expert, analyze this quiz content and provide comprehensive insights for educators:
 
-# Preprocess open-ended text
-for col in open_ended_cols:
-    df_cleaned[col] = df_cleaned[col].apply(preprocess_text)
+        Quiz Topic: {quiz_content['prompt']}
+        Number of Questions: {len(quiz_content['questions'])}
 
-# --- WORD FREQUENCIES AND WORDCLOUD ---
-summary = {}
-for col in open_ended_cols:
-    text = ' '.join(df_cleaned[col])
-    vectorizer = CountVectorizer()
-    matrix = vectorizer.fit_transform([text])
-    word_freq = dict(zip(vectorizer.get_feature_names_out(), matrix.toarray()[0]))
-    summary[col] = word_freq
+        Questions and Answers:
+        {json.dumps(quiz_content['questions'], indent=2)}
 
-# --- NUMERIC STATS ---
-numeric_summary = df[numeric_cols].describe().round(2)
+        Please provide a detailed analysis covering:
 
-# --- GENERATE PDF ---
-doc = SimpleDocTemplate(
-    "class_feedback_report.pdf",
-    pagesize=letter,
-    rightMargin=72,
-    leftMargin=72,
-    topMargin=72,
-    bottomMargin=72
-)
+        1. LEARNING OBJECTIVES ASSESSMENT:
+           - What specific learning objectives does this quiz assess?
+           - Are the questions well-aligned with the stated topic?
+           - What cognitive levels (Bloom's taxonomy) do the questions target?
 
-# Styles
-styles = getSampleStyleSheet()
-title_style = ParagraphStyle(
-    'CustomTitle',
-    parent=styles['Heading1'],
-    fontSize=24,
-    spaceAfter=30,
-    alignment=1  # Center alignment
-)
-heading_style = ParagraphStyle(
-    'CustomHeading',
-    parent=styles['Heading2'],
-    fontSize=16,
-    spaceAfter=20,
-    keepWithNext=True  # Ensures heading stays with content
-)
-subheading_style = ParagraphStyle(
-    'CustomSubHeading',
-    parent=styles['Heading3'],
-    fontSize=14,
-    spaceAfter=10,
-    keepWithNext=True  # Ensures subheading stays with content
-)
-normal_style = ParagraphStyle(
-    'CustomNormal',
-    parent=styles['Normal'],
-    alignment=1  # Center alignment
-)
+        2. QUESTION QUALITY ANALYSIS:
+           - Assess the quality of each question (clarity, difficulty, educational value)
+           - Identify any potential issues with question construction
+           - Evaluate the effectiveness of distractors
 
-# Create story (content)
-story = []
+        3. CONTENT COVERAGE:
+           - What key concepts are covered?
+           - Are there any important topics missing?
+           - Is the coverage balanced across different aspects of the topic?
 
-# Title Page
-title = Paragraph("Class Feedback Report", title_style)
-date = Paragraph(f"Generated on: {pd.Timestamp.now().strftime('%Y-%m-%d')}", normal_style)
-story.extend([
-    title,
-    date,
-    PageBreak()
-])
+        4. PEDAGOGICAL INSIGHTS:
+           - What misconceptions do the questions address?
+           - How well do the explanations support learning?
+           - What teaching strategies would complement this assessment?
 
-# Open-ended Feedback Analysis
-story.append(Paragraph("Open-ended Feedback Analysis", heading_style))
+        5. RECOMMENDATIONS FOR IMPROVEMENT:
+           - Specific suggestions for enhancing individual questions
+           - Ideas for additional questions to improve coverage
+           - Ways to better align with learning objectives
 
-# Word Clouds
-image_paths = []  # Keep track of generated images
-for i in range(0, len(open_ended_cols), 2):  # Process two columns at a time
-    # Create a group of elements for this page
-    page_elements = []
+        6. STUDENT LEARNING PREDICTIONS:
+           - Which questions might students find most challenging?
+           - What areas might need additional instruction?
+           - Suggestions for follow-up activities
+
+        Format your response in clear sections with specific, actionable insights.
+        """
+        
+        response = model.generate_content(analysis_prompt)
+        return response.text
+        
+    except Exception as e:
+        print(f"WARNING: Could not generate AI analysis: {e}")
+        return "AI analysis unavailable. Please check your Gemini API configuration."
+
+def analyze_feedback_with_ai(feedback_data, numeric_stats):
+    """Use Gemini to analyze student feedback."""
+    try:
+        model = genai.GenerativeModel('gemini-2.5-pro')
+        
+        # Prepare feedback summary
+        feedback_summary = {}
+        if feedback_data:
+            for col, word_freq in feedback_data.items():
+                top_words = list(word_freq.items())[:10]
+                feedback_summary[col] = top_words
+        
+        analysis_prompt = f"""
+        As an educational expert, analyze this student feedback data and provide insights for course improvement:
+
+        QUALITATIVE FEEDBACK THEMES:
+        {json.dumps(feedback_summary, indent=2)}
+
+        QUANTITATIVE RATINGS:
+        {numeric_stats.to_string() if numeric_stats is not None else "No numeric data available"}
+
+        Please provide analysis covering:
+
+        1. STUDENT SATISFACTION ANALYSIS:
+           - Overall satisfaction levels and trends
+           - Areas of strength based on feedback
+           - Areas needing improvement
+
+        2. LEARNING EFFECTIVENESS:
+           - Evidence of student learning and engagement
+           - Concepts students found most/least clear
+           - Suggestions for pedagogical improvements
+
+        3. COURSE DESIGN INSIGHTS:
+           - What's working well in the course structure?
+           - What aspects need redesign or enhancement?
+           - Balance between theory and practice
+
+        4. ACTIONABLE RECOMMENDATIONS:
+           - Specific changes to improve student experience
+           - Teaching methods that would address concerns
+           - Ways to build on successful elements
+
+        5. FUTURE PLANNING:
+           - Topics that need more time or different approach
+           - Student preparation recommendations
+           - Assessment and activity modifications
+
+        Provide specific, actionable insights that an educator can implement.
+        """
+        
+        response = model.generate_content(analysis_prompt)
+        return response.text
+        
+    except Exception as e:
+        print(f"WARNING: Could not generate feedback AI analysis: {e}")
+        return "Feedback AI analysis unavailable. Please check your Gemini API configuration."
+
+def create_visualization_charts(quiz_data, feedback_data=None):
+    """Create educational visualization charts."""
+    chart_paths = []
     
-    # Process up to two columns
-    for j in range(2):
-        if i + j < len(open_ended_cols):
-            col = open_ended_cols[i + j]
+    try:
+        # Set style for better-looking charts
+        plt.style.use('seaborn-v0_8')
+        
+        # 1. Question Type Distribution
+        question_types = defaultdict(int)
+        for quiz in quiz_data['quiz_questions']:
+            question_text = quiz['question'].lower()
+            if 'what' in question_text:
+                question_types['What'] += 1
+            elif 'how' in question_text:
+                question_types['How'] += 1
+            elif 'why' in question_text:
+                question_types['Why'] += 1
+            elif 'which' in question_text:
+                question_types['Which'] += 1
+            elif 'when' in question_text:
+                question_types['When'] += 1
+            else:
+                question_types['Other'] += 1
+        
+        if question_types:
+            fig, ax = plt.subplots(figsize=(8, 6))
+            types = list(question_types.keys())
+            counts = list(question_types.values())
+            colors_palette = plt.cm.Set3(range(len(types)))
             
-            # Generate word cloud with 2:1 aspect ratio
-            wc = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(summary[col])
+            bars = ax.bar(types, counts, color=colors_palette)
+            ax.set_title('Distribution of Question Types', fontsize=14, fontweight='bold')
+            ax.set_ylabel('Number of Questions')
+            ax.set_xlabel('Question Type')
             
-            # Create safe filename
-            image_path = f"{sanitize_filename(col)}_wordcloud.png"
-            wc.to_file(image_path)
-            image_paths.append(image_path)
+            # Add value labels on bars
+            for bar in bars:
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height,
+                       f'{int(height)}', ha='center', va='bottom')
             
-            # Add header and image
-            page_elements.append(Paragraph(col, subheading_style))
-            # Use 5 inch width to maintain aspect ratio (original is 800x400, so 2:1)
-            img = Image(image_path, width=5*inch, height=2.5*inch)
-            page_elements.append(img)
-            page_elements.append(Spacer(1, 30))  # Increased spacing between word clouds
+            plt.tight_layout()
+            chart_path = 'question_types_chart.png'
+            plt.savefig(chart_path, dpi=300, bbox_inches='tight')
+            chart_paths.append(chart_path)
+            plt.close()
+        
+        # 2. Question Complexity Analysis (based on explanation length and option complexity)
+        if len(quiz_data['quiz_questions']) > 1:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            
+            question_nums = []
+            complexity_scores = []
+            
+            for i, quiz in enumerate(quiz_data['quiz_questions'], 1):
+                # Simple complexity metric based on explanation length and number of concepts
+                explanation_words = len(quiz['explanation'].split())
+                option_complexity = sum(len(opt.split()) for opt in quiz.get('options', {}).values())
+                complexity = (explanation_words + option_complexity) / 10  # Normalize
+                
+                question_nums.append(f'Q{i}')
+                complexity_scores.append(complexity)
+            
+            bars = ax.bar(question_nums, complexity_scores, color='lightblue', edgecolor='navy', alpha=0.7)
+            ax.set_title('Question Complexity Analysis', fontsize=14, fontweight='bold')
+            ax.set_ylabel('Complexity Score')
+            ax.set_xlabel('Questions')
+            ax.grid(axis='y', alpha=0.3)
+            
+            # Add value labels
+            for bar in bars:
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height,
+                       f'{height:.1f}', ha='center', va='bottom')
+            
+            plt.tight_layout()
+            chart_path = 'question_complexity_chart.png'
+            plt.savefig(chart_path, dpi=300, bbox_inches='tight')
+            chart_paths.append(chart_path)
+            plt.close()
     
-    # Keep all elements for this page together
-    story.append(KeepTogether(page_elements))
+    except Exception as e:
+        print(f"WARNING: Could not generate charts: {e}")
     
-    # Add page break if not the last page
-    if i + 2 < len(open_ended_cols):
+    return chart_paths
+
+def analyze_quiz_content(quiz_data):
+    """Enhanced quiz content analysis."""
+    analysis = {
+        'total_questions': len(quiz_data['quiz_questions']),
+        'question_types': defaultdict(int),
+        'difficulty_indicators': [],
+        'topic_coverage': [],
+        'word_frequencies': {},
+        'option_analysis': defaultdict(int),
+        'cognitive_levels': defaultdict(int)
+    }
+    
+    # Combine all text for word frequency analysis
+    all_questions = []
+    all_explanations = []
+    all_options = []
+    
+    for quiz in quiz_data['quiz_questions']:
+        # Collect text
+        all_questions.append(quiz['question'])
+        all_explanations.append(quiz['explanation'])
+        
+        # Analyze options
+        options = quiz.get('options', {})
+        analysis['option_analysis']['total_options'] += len(options)
+        for key, option_text in options.items():
+            all_options.append(option_text)
+        
+        # Question type analysis
+        question_text = quiz['question'].lower()
+        if 'what' in question_text:
+            analysis['question_types']['What'] += 1
+        elif 'how' in question_text:
+            analysis['question_types']['How'] += 1
+        elif 'why' in question_text:
+            analysis['question_types']['Why'] += 1
+        elif 'which' in question_text:
+            analysis['question_types']['Which'] += 1
+        elif 'when' in question_text:
+            analysis['question_types']['When'] += 1
+        else:
+            analysis['question_types']['Other'] += 1
+        
+        # Simple cognitive level analysis based on question stems
+        if any(word in question_text for word in ['analyze', 'compare', 'evaluate', 'assess']):
+            analysis['cognitive_levels']['Analysis/Evaluation'] += 1
+        elif any(word in question_text for word in ['apply', 'implement', 'use', 'demonstrate']):
+            analysis['cognitive_levels']['Application'] += 1
+        elif any(word in question_text for word in ['define', 'identify', 'list', 'recall']):
+            analysis['cognitive_levels']['Knowledge/Comprehension'] += 1
+        else:
+            analysis['cognitive_levels']['Mixed/Other'] += 1
+    
+    # Generate word frequencies for different text types
+    text_categories = {
+        'Questions': ' '.join(all_questions),
+        'Explanations': ' '.join(all_explanations),
+        'Answer Options': ' '.join(all_options)
+    }
+    
+    for category, text in text_categories.items():
+        if text.strip():
+            processed_text = preprocess_text(text)
+            if processed_text:
+                vectorizer = CountVectorizer()
+                try:
+                    matrix = vectorizer.fit_transform([processed_text])
+                    word_freq = dict(zip(vectorizer.get_feature_names_out(), matrix.toarray()[0]))
+                    analysis['word_frequencies'][category] = dict(
+                        sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:30]
+                    )
+                except:
+                    analysis['word_frequencies'][category] = {}
+    
+    return analysis
+
+def load_feedback_data():
+    """Load and analyze feedback CSV if available."""
+    try:
+        df = pd.read_csv(feedback_file_path, encoding="ISO-8859-1")
+        
+        # Assume first 5 columns are open-ended, rest are numeric
+        if len(df.columns) >= 5:
+            open_ended_cols = df.columns[:5]
+            numeric_cols = df.columns[5:]
+            
+            # Preprocess open-ended text
+            df_cleaned = df.copy()
+            for col in open_ended_cols:
+                df_cleaned[col] = df_cleaned[col].apply(preprocess_text)
+            
+            # Generate word frequencies for feedback
+            feedback_analysis = {}
+            for col in open_ended_cols:
+                text = ' '.join(df_cleaned[col].dropna())
+                if text.strip():
+                    vectorizer = CountVectorizer()
+                    try:
+                        matrix = vectorizer.fit_transform([text])
+                        word_freq = dict(zip(vectorizer.get_feature_names_out(), matrix.toarray()[0]))
+                        feedback_analysis[col] = dict(
+                            sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:20]
+                        )
+                    except:
+                        feedback_analysis[col] = {}
+            
+            # Numeric statistics
+            numeric_summary = df[numeric_cols].describe().round(2) if len(numeric_cols) > 0 else None
+            
+            return feedback_analysis, numeric_summary, open_ended_cols, numeric_cols
+        
+    except FileNotFoundError:
+        print("INFO: No feedback CSV found. Generating quiz-only report.")
+    except Exception as e:
+        print(f"WARNING: Error loading feedback data: {e}")
+    
+    return None, None, [], []
+
+def create_enhanced_quiz_table(analysis):
+    """Create an enhanced quiz analysis table."""
+    table_data = [['Metric', 'Value', 'Educational Insight']]
+    
+    table_data.append(['Total Questions', str(analysis['total_questions']), 
+                      'Good for 15-20 min assessment' if analysis['total_questions'] <= 5 else 'Extended assessment'])
+    
+    table_data.append(['Total Answer Options', str(analysis['option_analysis']['total_options']), 
+                      'Standard 4-option multiple choice' if analysis['option_analysis']['total_options'] == analysis['total_questions'] * 4 else 'Varied option count'])
+    
+    # Question types with insights
+    for q_type, count in analysis['question_types'].items():
+        insight = {
+            'What': 'Tests factual knowledge',
+            'How': 'Tests procedural understanding',
+            'Why': 'Tests conceptual reasoning',
+            'Which': 'Tests discrimination/selection',
+            'When': 'Tests temporal knowledge'
+        }.get(q_type, 'Mixed cognitive demands')
+        
+        table_data.append([f'{q_type} Questions', str(count), insight])
+    
+    # Cognitive levels
+    for level, count in analysis['cognitive_levels'].items():
+        table_data.append([f'{level}', str(count), 'Bloom\'s taxonomy level'])
+    
+    return table_data
+
+def generate_report():
+    """Generate the comprehensive educational PDF report."""
+    
+    # Load quiz data
+    try:
+        with open(quiz_file_path, 'r', encoding='utf-8') as f:
+            quiz_data = json.load(f)
+    except FileNotFoundError:
+        print(f"ERROR: Quiz response file not found: {quiz_file_path}")
+        return
+    except json.JSONDecodeError as e:
+        print(f"ERROR: Error parsing quiz JSON: {e}")
+        return
+    
+    # Analyze quiz content
+    quiz_analysis = analyze_quiz_content(quiz_data)
+    
+    # Generate AI analysis
+    print("Generating AI-powered educational insights...")
+    ai_quiz_analysis = analyze_quiz_with_ai(quiz_data)
+    
+    # Load feedback data (optional)
+    feedback_analysis, numeric_summary, open_ended_cols, numeric_cols = load_feedback_data()
+    
+    # Generate AI feedback analysis if feedback exists
+    ai_feedback_analysis = ""
+    if feedback_analysis and numeric_summary is not None:
+        print("Analyzing student feedback with AI...")
+        ai_feedback_analysis = analyze_feedback_with_ai(feedback_analysis, numeric_summary)
+    
+    # Create visualization charts
+    print("Creating educational visualizations...")
+    chart_paths = create_visualization_charts(quiz_data, feedback_analysis)
+    
+    # Create PDF document
+    doc = SimpleDocTemplate(
+        output_filename,
+        pagesize=A4,
+        rightMargin=72,
+        leftMargin=72,
+        topMargin=72,
+        bottomMargin=72
+    )
+    
+    # Enhanced styles
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=22,
+        spaceAfter=20,
+        alignment=TA_CENTER,
+        textColor=colors.darkblue
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=16,
+        spaceAfter=15,
+        spaceBefore=20,
+        keepWithNext=True,
+        textColor=colors.darkblue,
+        borderWidth=1,
+        borderColor=colors.lightgrey,
+        borderPadding=5
+    )
+    
+    subheading_style = ParagraphStyle(
+        'CustomSubHeading',
+        parent=styles['Heading3'],
+        fontSize=14,
+        spaceAfter=10,
+        spaceBefore=15,
+        keepWithNext=True,
+        textColor=colors.darkgreen
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        alignment=TA_JUSTIFY,
+        spaceBefore=6,
+        spaceAfter=6
+    )
+    
+    # Create story (content)
+    story = []
+    
+    # Enhanced Title Page
+    story.append(Paragraph("Educational Assessment Analysis Report", title_style))
+    story.append(Spacer(1, 20))
+    
+    # Executive Summary Box
+    summary_style = ParagraphStyle(
+        'Summary',
+        parent=styles['Normal'],
+        fontSize=10,
+        leading=12,
+        leftIndent=20,
+        rightIndent=20,
+        spaceBefore=10,
+        spaceAfter=10,
+        borderWidth=1,
+        borderColor=colors.grey,
+        borderPadding=10,
+        backColor=colors.lightblue
+    )
+    
+    exec_summary = f"""
+    <b>EXECUTIVE SUMMARY</b><br/>
+    Assessment Topic: {quiz_data.get('prompt', 'N/A')}<br/>
+    Number of Questions: {quiz_data.get('num_quizzes', 'N/A')}<br/>
+    Generated: {quiz_data.get('timestamp', 'N/A')[:19].replace('T', ' ') if quiz_data.get('timestamp') else 'N/A'}<br/>
+    Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}<br/>
+    <br/>
+    This report provides comprehensive analysis of quiz content, educational effectiveness, 
+    and actionable recommendations for educators.
+    """
+    
+    story.append(Paragraph(exec_summary, summary_style))
+    story.append(PageBreak())
+    
+    # Table of Contents
+    story.append(Paragraph("Table of Contents", heading_style))
+    toc_items = [
+        "1. Quiz Content Analysis",
+        "2. Educational Quality Assessment",
+        "3. AI-Powered Pedagogical Insights", 
+        "4. Visual Analytics",
+        "5. Individual Question Analysis",
+        "6. Student Feedback Analysis (if available)",
+        "7. Recommendations for Improvement"
+    ]
+    
+    for item in toc_items:
+        story.append(Paragraph(item, normal_style))
+    
+    story.append(PageBreak())
+    
+    # 1. Quiz Content Analysis
+    story.append(Paragraph("1. Quiz Content Analysis", heading_style))
+    
+    # Enhanced analysis table
+    enhanced_table_data = create_enhanced_quiz_table(quiz_analysis)
+    enhanced_table = Table(enhanced_table_data, colWidths=[150, 80, 250])
+    enhanced_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ]))
+    
+    story.append(enhanced_table)
+    story.append(Spacer(1, 20))
+    
+    # 2. Educational Quality Assessment
+    story.append(PageBreak())
+    story.append(Paragraph("2. Educational Quality Assessment", heading_style))
+    
+    # Key metrics summary
+    quality_metrics = f"""
+    <b>Content Coverage:</b> {len(quiz_analysis['word_frequencies'].get('Questions', {}))} unique concepts identified in questions<br/>
+    <b>Explanation Depth:</b> {len(quiz_analysis['word_frequencies'].get('Explanations', {}))} pedagogical terms in explanations<br/>
+    <b>Cognitive Diversity:</b> {len(quiz_analysis['cognitive_levels'])} different cognitive levels represented<br/>
+    <b>Assessment Balance:</b> Questions distributed across {len(quiz_analysis['question_types'])} different question types
+    """
+    
+    story.append(Paragraph(quality_metrics, normal_style))
+    story.append(Spacer(1, 15))
+    
+    # 3. AI-Powered Insights
+    story.append(Paragraph("3. AI-Powered Pedagogical Insights", heading_style))
+    
+    # Split AI analysis into paragraphs for better formatting
+    ai_paragraphs = ai_quiz_analysis.split('\n\n')
+    for paragraph in ai_paragraphs:
+        if paragraph.strip():
+            story.append(Paragraph(paragraph.strip(), normal_style))
+            story.append(Spacer(1, 8))
+    
+    # 4. Visual Analytics
+    story.append(PageBreak())
+    story.append(Paragraph("4. Visual Analytics", heading_style))
+    
+    # Include charts
+    for chart_path in chart_paths:
+        if os.path.exists(chart_path):
+            try:
+                img = Image(chart_path, width=6*inch, height=4*inch)
+                story.append(img)
+                story.append(Spacer(1, 15))
+            except Exception as e:
+                print(f"WARNING: Could not include chart {chart_path}: {e}")
+    
+    # Word clouds with better formatting
+    image_paths = []
+    for category, word_freq in quiz_analysis['word_frequencies'].items():
+        if word_freq:
+            try:
+                # Create more educational word cloud
+                wc = WordCloud(
+                    width=800, 
+                    height=400, 
+                    background_color='white',
+                    colormap='viridis',
+                    max_words=30
+                ).generate_from_frequencies(word_freq)
+                
+                image_path = f"{sanitize_filename(category)}_educational_wordcloud.png"
+                wc.to_file(image_path)
+                image_paths.append(image_path)
+                
+                story.append(Paragraph(f"{category} - Key Educational Terms", subheading_style))
+                img = Image(image_path, width=6*inch, height=3*inch)
+                story.append(img)
+                story.append(Spacer(1, 15))
+            except Exception as e:
+                print(f"WARNING: Could not generate word cloud for {category}: {e}")
+    
+    # 5. Individual Question Analysis
+    story.append(PageBreak())
+    story.append(Paragraph("5. Individual Question Analysis", heading_style))
+    
+    for i, quiz in enumerate(quiz_data['quiz_questions'], 1):
+        question_elements = []
+        
+        # Question header with styling
+        question_elements.append(Paragraph(f"<b>Question {i}</b>", subheading_style))
+        question_elements.append(Paragraph(f"<b>Stem:</b> {quiz['question']}", normal_style))
+        
+        # Options with correct answer highlighted
+        options = quiz.get('options', {})
+        for key, option in options.items():
+            if key == quiz.get('correct'):
+                question_elements.append(Paragraph(f"<b>{key.upper()}:</b> {option} ✓ <i>(Correct Answer)</i>", 
+                                                 ParagraphStyle('CorrectAnswer', parent=normal_style, textColor=colors.darkgreen)))
+            else:
+                question_elements.append(Paragraph(f"{key.upper()}: {option}", normal_style))
+        
+        # Educational explanation
+        question_elements.append(Paragraph(f"<b>Educational Rationale:</b> {quiz['explanation']}", normal_style))
+        question_elements.append(Spacer(1, 20))
+        
+        story.append(KeepTogether(question_elements))
+    
+    # 6. Student Feedback Analysis (if available)
+    if feedback_analysis and numeric_summary is not None:
         story.append(PageBreak())
+        story.append(Paragraph("6. Student Feedback Analysis", heading_style))
+        
+        # AI feedback analysis
+        if ai_feedback_analysis:
+            feedback_paragraphs = ai_feedback_analysis.split('\n\n')
+            for paragraph in feedback_paragraphs:
+                if paragraph.strip():
+                    story.append(Paragraph(paragraph.strip(), normal_style))
+                    story.append(Spacer(1, 8))
+        
+        # Quantitative summary with enhanced formatting
+        story.append(Paragraph("Quantitative Feedback Summary", subheading_style))
+        
+        if not numeric_summary.empty:
+            table_data = [['Metric', 'Mean', 'Std Dev', 'Min', 'Max', 'Interpretation']]
+            for col in numeric_summary.columns:
+                stats = numeric_summary[col]
+                # Add interpretation based on mean scores
+                if stats['mean'] >= 8.0:
+                    interpretation = "Excellent"
+                elif stats['mean'] >= 7.0:
+                    interpretation = "Very Good"
+                elif stats['mean'] >= 6.0:
+                    interpretation = "Good"
+                elif stats['mean'] >= 5.0:
+                    interpretation = "Satisfactory"
+                else:
+                    interpretation = "Needs Improvement"
+                
+                table_data.append([
+                    Paragraph(col, ParagraphStyle('TableCell', fontSize=8, leading=10)),
+                    f"{stats['mean']:.2f}",
+                    f"{stats['std']:.2f}",
+                    f"{stats['min']:.2f}",
+                    f"{stats['max']:.2f}",
+                    interpretation
+                ])
+            
+            feedback_table = Table(table_data, colWidths=[180, 50, 50, 40, 40, 80])
+            feedback_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.darkgreen),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('ALIGN', (0, 1), (0, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 8),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+            ]))
+            
+            story.append(feedback_table)
+    
+    # 7. Recommendations
+    story.append(PageBreak())
+    story.append(Paragraph("7. Recommendations for Educational Improvement", heading_style))
+    
+    recommendations = f"""
+    <b>IMMEDIATE ACTIONS:</b><br/>
+    • Review questions with low cognitive complexity and consider adding higher-order thinking elements.<br/>
+    • Ensure balanced representation across different question types to avoid over-emphasising recall-level items.<br/>
+    • Verify that explanations provide clear learning pathways and explicitly address common misconceptions.<br/><br/>
 
-# Quantitative Analysis (only once)
-story.append(PageBreak())
-story.append(Paragraph("Quantitative Feedback Summary", heading_style))
+    <b>MEDIUM-TERM ENHANCEMENTS (next course run):</b><br/>
+    • Map every question to a specific learning objective and Bloom’s level to guarantee constructive alignment.<br/>
+    • Create alternative versions of the quiz to enable formative use without compromising summative integrity.<br/>
+    • Introduce short reflection prompts after difficult items to strengthen metacognitive skills.<br/><br/>
 
-# Create table data
-table_data = [['Metric', 'Mean', 'Std Dev', 'Min', 'Max']]
-for col in numeric_summary.columns:
-    stats = numeric_summary[col]
-    table_data.append([
-        Paragraph(col, ParagraphStyle('TableCell', fontSize=8, leading=10)),  # Wrap text in table
-        f"{stats['mean']:.2f}",
-        f"{stats['std']:.2f}",
-        f"{stats['min']:.2f}",
-        f"{stats['max']:.2f}"
-    ])
+    <b>LONG-TERM STRATEGY:</b><br/>
+    • Establish an item bank with analytics (difficulty, discrimination indices) to guide data-driven revisions.<br/>
+    • Combine quiz analytics with classroom performance data to personalise remediation pathways.<br/>
+    • Periodically solicit student feedback focused on assessment fairness and transparency, then iterate accordingly.
+    """
 
-# Create table with style
-table_style = TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-    ('ALIGN', (0, 1), (0, -1), 'LEFT'),  # Left align first column (metric names)
-    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-    ('FONTSIZE', (0, 0), (-1, 0), 10),
-    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-    ('FONTSIZE', (0, 1), (-1, -1), 8),
-    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-    ('TOPPADDING', (0, 1), (-1, -1), 6),
-    ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
-    ('GRID', (0, 0), (-1, -1), 1, colors.black),
-    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
-    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),  # Vertical alignment
-])
+    story.append(Paragraph(recommendations, normal_style))
 
-# Create table with column widths
-col_widths = [250, 60, 60, 60, 60]
-table = Table(table_data, colWidths=col_widths, repeatRows=1)  # repeatRows=1 repeats header on new pages
-table.setStyle(table_style)
-story.append(table)
+    # ---------- BUILD THE PDF ----------
+    try:
+        doc.build(story)
+        print(f"SUCCESS: Report generated – {output_filename}")
+    except Exception as e:
+        print(f"ERROR: Failed to generate PDF: {e}")
 
-# Build PDF
-doc.build(story)
 
-# Clean up images after PDF is generated
-for image_path in image_paths:
-    if os.path.exists(image_path):
-        os.remove(image_path)
-
-print("✅ Report generated: class_feedback_report.pdf")
+if __name__ == "__main__":
+    generate_report()

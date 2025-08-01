@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 import json
 import os
 import re
+from datetime import datetime
 from flask_cors import CORS
 import google.generativeai as genai
 from werkzeug.utils import secure_filename
@@ -30,7 +31,7 @@ def generate(prompt, num_quizzes, questions=None, pdf_path=None):
         genai.configure(api_key=config['gemini_api_key'])
         
         # Initialize Gemini Pro Model
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-pro')
         
         system_prompt = """You are Dr. Sarah Chen, an expert educational psychologist and assessment specialist with 15 years of experience in curriculum development and learning analytics. You specialize in creating engaging, pedagogically sound assessments that promote deep learning and critical thinking.
 
@@ -196,6 +197,21 @@ def generate_quiz():
             # Try to parse JSON
             try:
                 parsed_result = json.loads(result)
+                
+                # Save quiz response to JSON file for report generation
+                quiz_data = {
+                    "prompt": prompt,
+                    "num_quizzes": num_quizzes,
+                    "questions": questions,
+                    "quiz_questions": parsed_result,
+                    "timestamp": datetime.now().isoformat()
+                }
+                
+                with open("quiz_response.json", "w", encoding="utf-8") as f:
+                    json.dump(quiz_data, f, indent=2, ensure_ascii=False)
+                
+                print(f"✅ Quiz response saved to quiz_response.json")
+                
                 return jsonify(parsed_result)
             except json.JSONDecodeError as e:
                 print(f"JSON parsing error: {str(e)}")
