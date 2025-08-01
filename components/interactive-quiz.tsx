@@ -16,44 +16,41 @@ interface QuizQuestion {
 }
 
 function parseQuiz(rawText: string): QuizQuestion[] {
-  // Match all question headers, e.g. **Question 1:**
-  const questionHeaderRegex = /\*\*Question \d+:\*\*/g
-  const questionHeaders = rawText.match(questionHeaderRegex)
-  if (!questionHeaders) return []
-
-  // Split text into question blocks at question headers (discard before first question)
-  const questionBlocks = rawText.split(questionHeaderRegex).slice(1)
+  // Split the raw text into question chunks by "Question <number>"
+  // The regex uses a lookahead to keep "Question X" as part of each chunk for reference
+  // The split excludes everything before first Question
+  const questionSplitRegex = /(?=\*\*Question \d+:\*\*)/
+  const questionChunks = rawText.split(questionSplitRegex).filter(chunk => chunk.trim().length > 0)
 
   const questions: QuizQuestion[] = []
 
-  questionBlocks.forEach((block, idx) => {
+  questionChunks.forEach((chunk, idx) => {
     const number = idx + 1
 
-    // Extract stem: text following "**Stem:**" up to start of options or Correct Answer or end of block
-    const stemMatch = block.match(
-      /\*\*Stem:\*\*\s*([\s\S]*?)(?=\*\*[A-D]\.\*\*|Correct Answer:|$)/
-    )
+    // Extract stem (after "**Stem:**" up to before options or Correct Answer)
+    const stemMatch = chunk.match(/\*\*Stem:\*\*\s*([\s\S]*?)(?=(\n\*\*[A-D]\.?\*\*|\nCorrect Answer:))/)
     const stem = stemMatch ? stemMatch[1].trim() : ""
 
-    // Extract options: lines like "**A.** Option text"
-    const optionRegex = /\*\*([A-D])\.\*\*\s*([^\n\r]+)/g
+    // Extract all options by matching lines starting with "**A.**", "**B.**", etc.
+    // Assume each option is on its own line
     const options: QuizOption[] = []
+    const optionLineRegex = /^\*\*([A-D])\.?\*\*\s*(.+)$/gm
+    let match: RegExpExecArray | null
 
-    let match
-    while ((match = optionRegex.exec(block)) !== null) {
+    while ((match = optionLineRegex.exec(chunk)) !== null) {
       options.push({ label: match[1], text: match[2].trim() })
     }
 
-    // Extract correct answer: line "**Correct Answer:** C" (single letter, no parentheses)
-    const correctAnswerMatch = block.match(/\*\*Correct Answer:\*\*\s*([A-D])/)
+    // Extract correct answer line: e.g. "Correct Answer: C"
+    const correctAnswerMatch = chunk.match(/Correct Answer:\s*([A-D])/)
     const correctAnswer = correctAnswerMatch ? correctAnswerMatch[1] : ""
 
-    // Extract explanation: text after "**Explanation:**" until end of block
-    const explanationMatch = block.match(/\*\*Explanation:\*\*\s*([\s\S]*)/)
+    // Extract explanation after "**Explanation:**" (until end)
+    const explanationMatch = chunk.match(/\*\*Explanation:\*\*\s*([\s\S]*)/)
     const explanation = explanationMatch ? explanationMatch[1].trim() : ""
 
-    // Add parsed question if valid stem and correct answer
-    if (stem && correctAnswer) {
+    // Add question only if minimum required fields are found
+    if (stem && options.length >= 1 && correctAnswer) {
       questions.push({ number, stem, options, correctAnswer, explanation })
     }
   })
