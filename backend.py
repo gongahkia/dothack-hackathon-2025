@@ -74,24 +74,7 @@ Before generating each question, think through:
 - What misconceptions do students commonly have?
 - How can I make the explanation educational?
 - Does this question contribute to deeper understanding?
-
-## OUTPUT FORMAT
-Return ONLY valid JSON array with this exact structure:
-[
-  {
-    "question": "Clear, focused question stem",
-    "options": {
-      "a": "Plausible distractor that teaches",
-      "b": "Correct answer",
-      "c": "Plausible distractor that addresses misconception",
-      "d": "Plausible distractor that reinforces concept"
-    },
-    "correct": "a/b/c/d",
-    "explanation": "Educational explanation that teaches the concept, addresses misconceptions, and connects to broader learning objectives"
-  }
-]
-
-IMPORTANT: Return ONLY the JSON array. No additional text, explanations, or commentary."""
+"""
 
         # Prepare content parts with chain of thought reasoning
         prompt_text = f"""Generate {num_quizzes} high-quality quiz questions for the lecture content: {prompt}
@@ -104,8 +87,27 @@ For each question, ensure:
 - Explanation teaches the concept and connects to broader learning objectives
 - Question difficulty is appropriate for the target audience
 
+## OUTPUT FORMAT
+Return ONLY valid JSON array with this exact structure:
+[
+  {{
+    "question": "Clear, focused question stem",
+    "options": {{
+      "a": "Plausible distractor that teaches",
+      "b": "Correct answer",
+      "c": "Plausible distractor that addresses misconception",
+      "d": "Plausible distractor that reinforces concept"
+    }},
+    "correct": "a/b/c/d",
+    "explanation": "Educational explanation that teaches the concept, addresses misconceptions, and connects to broader learning objectives"
+  }}
+]
+
+IMPORTANT: Return ONLY the JSON array. No additional text, explanations, or commentary.
+
 ## CONTENT INTEGRATION
-If student questions were provided, incorporate those concepts and address any knowledge gaps they reveal."""
+If student questions were provided, incorporate those concepts and address any knowledge gaps they reveal.
+"""
         
         if questions:
             prompt_text += f"\n\n## STUDENT QUESTIONS TO ADDRESS\n{questions}\n\nEnsure your questions cover these concepts and address any misconceptions revealed in the student questions."
