@@ -1,9 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./*"]
-    },
     "target": "ES2017",
     "lib": [
       "dom",
@@ -33,6 +29,10 @@
     "**/*.ts",
     "**/*.tsx"
   ],
+  "baseUrl": ".",
+  "paths": {
+    "@/*": ["./*"]
+  },
   "exclude": [
     "node_modules"
   ]

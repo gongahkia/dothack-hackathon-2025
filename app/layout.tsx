@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "QuizGen - AI-Powered Quiz Generator",
+  title: "QuizBatter",
   description: "Transform your lecture content into engaging quizzes with AI",
 }
 

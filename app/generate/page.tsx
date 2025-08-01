@@ -1,5 +1,5 @@
 import { Navigation } from "@/components/navigation"
-import { QuizGenerator } from "@/components/quiz-generator"
+import { QuizBattererator } from "@/components/quiz-generator"
 
 export default function GeneratePage() {
   return (
@@ -13,7 +13,7 @@ export default function GeneratePage() {
               Upload your materials and let AI generate personalized quiz questions
             </p>
           </div>
-          <QuizGenerator />
+          <QuizBattererator />
         </div>
       </main>
     </div>

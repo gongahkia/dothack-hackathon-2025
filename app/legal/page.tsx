@@ -10,7 +10,7 @@ export default function LegalPage() {
           <div className="text-center mb-12">
             <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-6">Legal Information</h1>
             <p className="text-xl text-gray-600 dark:text-gray-300">
-              Important legal notices and disclaimers for QuizGen users
+              Important legal notices and disclaimers for QuizBatter users
             </p>
           </div>
 
@@ -21,7 +21,7 @@ export default function LegalPage() {
               </CardHeader>
               <CardContent className="prose prose-gray dark:prose-invert max-w-none">
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  By using QuizGen, you agree to these terms of service. Our platform is provided "as is" for
+                  By using QuizBatter, you agree to these terms of service. Our platform is provided "as is" for
                   educational purposes. Users are responsible for ensuring their uploaded content complies with
                   applicable laws and regulations.
                 </p>
@@ -65,7 +65,7 @@ export default function LegalPage() {
               </CardHeader>
               <CardContent className="prose prose-gray dark:prose-invert max-w-none">
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  QuizGen uses artificial intelligence to generate quiz content. Please be aware of the following:
+                  QuizBatter uses artificial intelligence to generate quiz content. Please be aware of the following:
                 </p>
                 <h4 className="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">AI-Generated Content</h4>
                 <ul className="text-gray-600 dark:text-gray-300 space-y-2">
@@ -88,7 +88,7 @@ export default function LegalPage() {
               </CardHeader>
               <CardContent className="prose prose-gray dark:prose-invert max-w-none">
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  QuizGen is provided for educational purposes only. We make no warranties about the accuracy,
+                  QuizBatter is provided for educational purposes only. We make no warranties about the accuracy,
                   completeness, or suitability of generated content for any particular purpose.
                 </p>
                 <h4 className="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">Disclaimers</h4>
