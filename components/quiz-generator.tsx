@@ -47,84 +47,114 @@ interface ParsedQuestion {
  */
 
 function parseRawQuiz(rawText: string): ParsedQuestion[] {
-  // Split into question chunks at "**Question X:**"
-  const questionChunks = rawText.split(/(?=\*\*Question \d+:\*\*)/).filter(Boolean);
-  console.log('Total questions found:', questionChunks.length);
+  const lines = rawText.split('\n');
 
   const questions: ParsedQuestion[] = [];
-  const optionLabels = ['a', 'b', 'c', 'd', 'e', 'f'];
+  let currentQuestion: Partial<ParsedQuestion> = {};
+  let currentOptions: string[] = [];
 
-  questionChunks.forEach((chunk, qIdx) => {
-    // Extract question stem
-    const stemMatch = chunk.match(/\*\*Stem:\*\*\s*([\s\S]*?)(?=\n|$)/);
-    const stem = stemMatch ? stemMatch[1].trim() : "";
-    if (!stem) {
-      console.warn(`No stem found for question ${qIdx + 1}!`);
-    }
+  let state: 'none' | 'stem' | 'options' | 'correct' | 'explanation' = 'none';
 
-    // Find index of the "**Stem:**" line
-    const chunkLines = chunk.split("\n").map(line => line.trim());
-    let stemLineIdx = chunkLines.findIndex(line => line.startsWith("**Stem:**"));
-    let afterStemIdx = stemLineIdx >= 0 ? stemLineIdx + 1 : 1;
+  // Helper to finalize the current question and store it if valid
+  function finalizeCurrentQuestion() {
+    if (currentQuestion.stem && currentOptions.length > 0 && currentQuestion.correctAnswer) {
+      // Clean and label options: assign labels A, B, C, ...
+      const optionLabels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const cleanedOptions = currentOptions.map((optLine, idx) => {
+        const cleaned = optLine.replace(/^(\*+)?[\(\[]?[a-zA-Z][\)\].:]?\*?\s*/i, '').trim();
+        return { label: optionLabels[idx], text: cleaned };
+      });
 
-    // Collect lines until "Correct Answer:" or "**Explanation:**"
-    let optionsLines: string[] = [];
-    for (let i = afterStemIdx; i < chunkLines.length; ++i) {
-      let line = chunkLines[i];
-      if (/^Correct Answer:/i.test(line) || /\*\*Explanation:\*\*/i.test(line)) break;
-      if (!line) continue; // skip empty lines
-      optionsLines.push(line);
-    }
-    if (optionsLines.length === 0) {
-      console.warn(`No options found for question ${qIdx + 1}!`);
-    }
-
-    // Parse the options: assign labels by order (a, b, c, d, ...)
-    const options: { label: string; text: string }[] = [];
-    optionsLines.forEach((line, idx) => {
-      // Remove leading markers: *, parens, letter (any case), dot/closing paren/bracket
-      // Match: **(a)**, (A), A., a), (c)], etc.
-      const cleaned = line.replace(/^(\*+)?[\(\[]?[a-dA-D][\)\].:]?\*?\s*/i, '').trim();
-      if (cleaned.length > 0 && idx < optionLabels.length) {
-        options.push({ label: optionLabels[idx], text: cleaned });
-      } else if (cleaned.length === 0) {
-        console.warn(`Empty cleaned option line (original line: "${line}") in question ${qIdx + 1} option ${idx + 1}`);
-      } else if (idx >= optionLabels.length) {
-        console.warn(`Too many options (${optionsLines.length}) in question ${qIdx + 1}; extra options ignored.`);
-      }
-    });
-
-    if (options.length === 0) {
-      console.warn(`Question ${qIdx + 1} has no valid options after cleaning.`);
-    }
-
-    // Extract correct answer
-    const correctMatch = chunk.match(/Correct Answer:\s*\(?([a-dA-D])\)?/);
-    const correctAnswer = correctMatch ? correctMatch[1].toLowerCase() : "";
-    if (!correctAnswer) {
-      console.warn(`No correct answer found for question ${qIdx + 1}!`);
-    }
-
-    // Extract explanation after **Explanation:**
-    const explMatch = chunk.match(/\*\*Explanation:\*\*\s*([\s\S]*)/);
-    const explanation = explMatch ? explMatch[1].trim() : "";
-    if (!explanation) {
-      console.warn(`No explanation found for question ${qIdx + 1}!`);
-    }
-
-    if (stem && options.length > 0 && correctAnswer) {
-      questions.push({ stem, options, correctAnswer, explanation });
-      console.log(`Parsed Q${qIdx + 1}`, { stem, options, correctAnswer, explanation });
+      questions.push({
+        stem: currentQuestion.stem,
+        options: cleanedOptions,
+        correctAnswer: currentQuestion.correctAnswer.toUpperCase(),
+        explanation: currentQuestion.explanation || '',
+      });
     } else {
-      console.error(
-        `Skipping question ${qIdx + 1} due to missing critical field(s). Has stem: ${!!stem}, options: ${options.length}, correctAnswer: ${!!correctAnswer}`
-      );
+      // Optional: log incomplete question details for debugging
+      console.warn('Skipping incomplete question:', currentQuestion);
     }
-  });
-
-  if (questions.length === 0) {
-    console.error('No valid questions parsed from input!');
+    // Reset for next question
+    currentQuestion = {};
+    currentOptions = [];
+    state = 'none';
   }
+
+  for (let line of lines) {
+    const trimmedLower = line.trim().toLowerCase();
+
+    // Detect question start line
+    if (/question\s*\d+/i.test(trimmedLower)) {
+      // If already parsing a question, finalize it first
+      if (state !== 'none') {
+        finalizeCurrentQuestion();
+      }
+      state = 'none'; // reset but about to parse a new question
+      currentQuestion = {};
+      currentOptions = [];
+      continue; // question line itself doesn't contain data we need to store
+    }
+
+    // Detect stem line
+    else if (trimmedLower.includes('stem')) {
+      state = 'stem';
+      // Extract stem text after “stem” marker (remove markdown and ‘stem’ label)
+      const stemText = line.replace(/.*stem\s*[:\-]*/i, '').trim();
+      currentQuestion.stem = stemText;
+    }
+
+    // Detect correct answer line
+    else if (trimmedLower.includes('correct answer')) {
+      state = 'correct';
+      // Extract the indicated letter after 'correct answer' (e.g., 'B', '(b)', etc.)
+      const match = line.match(/correct answer\s*[:\-]*\s*\(?([a-zA-Z])\)?/i);
+      if (match) {
+        currentQuestion.correctAnswer = match[1].toUpperCase();
+      } else {
+        console.warn('Failed to parse correct answer line:', line);
+        currentQuestion.correctAnswer = '';
+      }
+    }
+
+    // Detect explanation line
+    else if (trimmedLower.includes('explanation')) {
+      state = 'explanation';
+      // Extract explanation after marker
+      const explText = line.replace(/.*explanation\s*[:\-]*/i, '').trim();
+      currentQuestion.explanation = explText;
+    }
+
+    // Parse lines depending on current state
+    else {
+      if (state === 'stem') {
+        // Append to stem if multiline
+        currentQuestion.stem = (currentQuestion.stem ? currentQuestion.stem + ' ' : '') + line.trim();
+      } else if (state === 'options') {
+        currentOptions.push(line);
+      } else if (state === 'correct') {
+        // sometimes options go after stem and before correct answer,
+        // so any line between stem and correct answer lines should be options
+        currentOptions.push(line);
+      } else if (state === 'explanation') {
+        // Append to explanation if multiline
+        currentQuestion.explanation = (currentQuestion.explanation ? currentQuestion.explanation + ' ' : '') + line.trim();
+      } else {
+        // We are between stem and correct answer? Allow options anytime if no state
+        if (currentQuestion.stem && !currentQuestion.correctAnswer) {
+          state = 'options';
+          currentOptions.push(line);
+        }
+      }
+    }
+  }
+
+  // Finalize last question if any
+  if (state !== 'none' && currentQuestion.stem) {
+    finalizeCurrentQuestion();
+  }
+
+  console.log(`Parsed ${questions.length} questions.`);
 
   return questions;
 }
