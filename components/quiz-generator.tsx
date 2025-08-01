@@ -21,10 +21,6 @@ interface QuizResponse {
   quizzes: Quiz[]
 }
 
-interface RawQuizResponseDisplayProps {
-  rawText: string
-}
-
 interface ParsedQuestion {
   stem: string
   options: { label: string; text: string }[]
@@ -67,7 +63,6 @@ function parseRawQuiz(rawJSON: string): ParsedQuestion[] {
       for (const [key, value] of Object.entries(item.options)) {
         optionsArray.push({ label: key.toLowerCase(), text: String(value) });
       }
-      // Optional: sort by label a,b,c,d
       optionsArray.sort((a, b) => a.label.localeCompare(b.label));
     }
 
@@ -78,55 +73,6 @@ function parseRawQuiz(rawJSON: string): ParsedQuestion[] {
       explanation: item.explanation ?? "",
     };
   });
-}
-
-function RawQuizResponseDisplay({ rawText }: RawQuizResponseDisplayProps) {
-  const questions = parseRawQuiz(rawText)
-
-  if (questions.length === 0) {
-    // Just render raw text prettily if parsing failed
-    return (
-      <pre className="whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-4 rounded-md text-sm text-gray-900 dark:text-gray-100">
-        {rawText}
-      </pre>
-    )
-  }
-
-  return (
-    <div className="space-y-8">
-      {questions.map((q, idx) => (
-        <div
-          key={idx}
-          className="p-4 border rounded-lg bg-white dark:bg-gray-700 shadow-sm"
-          aria-label={`Question ${idx + 1}`}
-        >
-          <h3 className="font-semibold text-lg mb-2">Question {idx + 1}</h3>
-          <p className="mb-3 italic">{q.stem}</p>
-
-          <ul className="list-disc list-inside mb-3">
-            {q.options.map((opt) => (
-              <li
-                key={opt.label}
-                className={
-                  opt.label === q.correctAnswer
-                    ? "font-bold text-green-700 dark:text-green-400"
-                    : ""
-                }
-              >
-                <strong>({opt.label})</strong> {opt.text}
-              </li>
-            ))}
-          </ul>
-
-          <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded text-sm mb-2">
-            <strong>Correct Answer:</strong> ({q.correctAnswer})
-          </div>
-
-          <p className="text-gray-700 dark:text-gray-300 text-sm">{q.explanation}</p>
-        </div>
-      ))}
-    </div>
-  )
 }
 
 export function QuizBattererator() {
@@ -187,26 +133,17 @@ export function QuizBattererator() {
         body: formData,
       })
 
-      const data = await response.json()
-
+      const rawJSON = await response.text() 
       if (!response.ok) {
-        throw new Error(data?.error || "Failed to generate quiz")
+        throw new Error(rawJSON || "Failed to generate quiz");
       }
 
-      // Always parse whatever text output is available
-      // Prefer raw_response, else try quizzes if string, else fallback to stringified data
-      let quizText = ""
-      if (typeof data === "string") {
-        quizText = data
-      } else if ("raw_response" in data && typeof data.raw_response === "string") {
-        quizText = data.raw_response
-      } else if ("quizzes" in data && typeof data.quizzes === "string") {
-        quizText = data.quizzes
-      } else {
-        quizText = JSON.stringify(data)
+      const parsedQuestions = parseRawQuiz(rawJSON);
+      if (parsedQuestions.length === 0) {
+        throw new Error("No quiz questions parsed from backend response");
       }
-
-      setRawResponse(quizText)
+      setQuizzes(parsedQuestions);
+      setRawResponse("");
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
@@ -215,36 +152,8 @@ export function QuizBattererator() {
     }
   }
 
-  // If quizzes loaded successfully, show quiz display as before
   if (quizzes.length > 0) {
-    return <QuizDisplay quizzes={quizzes} onReset={() => setQuizzes([])} />
-  }
-
-  if (rawResponse) {
-    return (
-      <Card className="border-0 shadow-lg bg-white dark:bg-gray-800 border dark:border-gray-700 p-6">
-        <CardHeader className="text-center pb-4">
-          <CardTitle className="text-2xl font-semibold text-gray-900 dark:text-white">
-            Quiz
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RawQuizResponseDisplay rawText={rawResponse} />
-          <div className="mt-6 text-center">
-            <Button
-              onClick={() => {
-                setRawResponse("")
-                setError("")
-                setQuizzes([])
-              }}
-              variant="outline"
-            >
-              Back to Quiz Generator
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    )
+    return <QuizDisplay quizzes={quizzes} onReset={() => setQuizzes([])} />;
   }
 
   // Default: show the quiz generation form
