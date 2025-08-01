@@ -159,6 +159,7 @@ def generate_quiz():
                 print(f"[generate_quiz] Uploaded file cleaned up from disk: {pdf_path}")
 
                 print("[generate_quiz] Raw AI response received. Returning raw text without JSON parsing.")
+                print(result)
                 return jsonify({'raw_response': result})
 
         except Exception as e:

@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -22,6 +20,118 @@ interface QuizResponse {
   quizzes: Quiz[]
 }
 
+interface RawQuizResponseDisplayProps {
+  rawText: string
+}
+
+interface ParsedQuestion {
+  stem: string
+  options: { label: string; text: string }[]
+  correctAnswer: string
+  explanation: string
+}
+
+/**
+ * A heuristic parser for raw AI quiz text, expecting a format like:
+ * 
+ * **Question X:**
+ * 
+ * **Stem:** ...
+ * **(a)** ...
+ * **(b)** ...
+ * **Correct Answer:** (b)
+ * **Explanation:** ...
+ *
+ * Adjust the regexes if your format varies.
+ */
+function parseRawQuiz(rawText: string): ParsedQuestion[] {
+  // Split the text into question sections by "**Question X:**" headings
+  const questionSplits = rawText.split(/(\*\*Question \d+:\*\*)/).filter(Boolean)
+
+  const questions: ParsedQuestion[] = []
+
+  for (let i = 0; i < questionSplits.length; i++) {
+    const header = questionSplits[i].match(/\*\*Question \d+:\*\*/)
+    if (header) {
+      const content = questionSplits[i + 1] || ""
+      i++ // Skip the content chunk next iteration since we already handled it here
+
+      // Extract stem text after "**Stem:**"
+      const stemMatch = content.match(/\*\*Stem:\*\*\s*([\s\S]*?)(?=\*\(\w\)\*\*|\*\*Correct Answer:\*\*|\*\*Explanation:\*\*|$)/)
+      const stem = stemMatch ? stemMatch[1].trim() : ""
+
+      // Extract options - lines starting "**(a)** ..." to "**(d)** ..."
+      const optionRegex = /\*\*\(([a-d])\)\*\*\s*([^\n]+)/g
+      const options: { label: string; text: string }[] = []
+      let optMatch: RegExpExecArray | null
+      while ((optMatch = optionRegex.exec(content)) !== null) {
+        options.push({ label: optMatch[1], text: optMatch[2].trim() })
+      }
+
+      // Extract correct answer e.g. "**Correct Answer:** (b)"
+      const correctMatch = content.match(/\*\*Correct Answer:\*\*\s*\(([a-d])\)/)
+      const correctAnswer = correctMatch ? correctMatch[1] : ""
+
+      // Extract explanation text after "**Explanation:**"
+      const explanationMatch = content.match(/\*\*Explanation:\*\*\s*([\s\S]*)/)
+      const explanation = explanationMatch ? explanationMatch[1].trim() : ""
+
+      questions.push({ stem, options, correctAnswer, explanation })
+    }
+  }
+
+  return questions
+}
+
+function RawQuizResponseDisplay({ rawText }: RawQuizResponseDisplayProps) {
+  const questions = parseRawQuiz(rawText)
+
+  if (questions.length === 0) {
+    // Just render raw text prettily if parsing failed
+    return (
+      <pre className="whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-4 rounded-md text-sm text-gray-900 dark:text-gray-100">
+        {rawText}
+      </pre>
+    )
+  }
+
+  return (
+    <div className="space-y-8">
+      {questions.map((q, idx) => (
+        <div
+          key={idx}
+          className="p-4 border rounded-lg bg-white dark:bg-gray-700 shadow-sm"
+          aria-label={`Question ${idx + 1}`}
+        >
+          <h3 className="font-semibold text-lg mb-2">Question {idx + 1}</h3>
+          <p className="mb-3 italic">{q.stem}</p>
+
+          <ul className="list-disc list-inside mb-3">
+            {q.options.map((opt) => (
+              <li
+                key={opt.label}
+                className={
+                  opt.label === q.correctAnswer
+                    ? "font-bold text-green-700 dark:text-green-400"
+                    : ""
+                }
+              >
+                <strong>({opt.label})</strong> {opt.text}
+              </li>
+            ))}
+          </ul>
+
+          <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded text-sm mb-2">
+            <strong>Correct Answer:</strong> ({q.correctAnswer})
+          </div>
+
+          <p className="text-gray-700 dark:text-gray-300 text-sm">{q.explanation}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function QuizBattererator() {
   const [prompt, setPrompt] = useState("")
   const [numQuizzes, setNumQuizzes] = useState(5)
@@ -30,6 +140,7 @@ export function QuizBattererator() {
   const [slidesFile, setSlidesFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
+  const [rawResponse, setRawResponse] = useState<string>("")
   const [error, setError] = useState("")
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,6 +168,7 @@ export function QuizBattererator() {
     setIsLoading(true)
     setError("")
     setQuizzes([])
+    setRawResponse("")
 
     try {
       const formData = new FormData()
@@ -67,7 +179,7 @@ export function QuizBattererator() {
         formData.append("questions", questions)
       }
 
-      // Add slides file with priority (if both files are uploaded, slides take precedence)
+      // Use slides file first if available
       if (slidesFile) {
         formData.append("file", slidesFile)
       } else if (file) {
@@ -79,10 +191,16 @@ export function QuizBattererator() {
         body: formData,
       })
 
-      const data: QuizResponse | { error: string } = await response.json()
+      const data: QuizResponse | { error: string; raw_response?: string } =
+        await response.json()
 
       if (!response.ok) {
         throw new Error("error" in data ? data.error : "Failed to generate quiz")
+      }
+
+      if ("raw_response" in data) {
+        setRawResponse(data.raw_response)
+        return
       }
 
       if ("quizzes" in data) {
@@ -95,14 +213,46 @@ export function QuizBattererator() {
     }
   }
 
+  // If quizzes loaded successfully, show quiz display as before
   if (quizzes.length > 0) {
     return <QuizDisplay quizzes={quizzes} onReset={() => setQuizzes([])} />
   }
 
+  // Show nicely formatted raw AI response if present
+  if (rawResponse) {
+    return (
+      <Card className="border-0 shadow-lg bg-white dark:bg-gray-800 border dark:border-gray-700 p-6">
+        <CardHeader className="text-center pb-4">
+          <CardTitle className="text-2xl font-semibold text-gray-900 dark:text-white">
+            Raw AI Quiz Response
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <RawQuizResponseDisplay rawText={rawResponse} />
+          <div className="mt-6 text-center">
+            <Button
+              onClick={() => {
+                setRawResponse("")
+                setError("")
+                setQuizzes([])
+              }}
+              variant="outline"
+            >
+              Back to Quiz Generator
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Default: show the quiz generation form
   return (
     <Card className="border-0 shadow-lg bg-white dark:bg-gray-800 border dark:border-gray-700">
       <CardHeader className="text-center pb-8">
-        <CardTitle className="text-2xl font-semibold text-gray-900 dark:text-white">Quiz Generation Form</CardTitle>
+        <CardTitle className="text-2xl font-semibold text-gray-900 dark:text-white">
+          Quiz Generation Form
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-8">
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -110,7 +260,10 @@ export function QuizBattererator() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Lecture Content */}
             <div className="space-y-2">
-              <Label htmlFor="prompt" className="text-base font-medium text-gray-900 dark:text-white">
+              <Label
+                htmlFor="prompt"
+                className="text-base font-medium text-gray-900 dark:text-white"
+              >
                 Lecture Content or Topic *
               </Label>
               <Textarea
@@ -125,7 +278,10 @@ export function QuizBattererator() {
 
             {/* Slides Upload */}
             <div className="space-y-2">
-              <Label htmlFor="slidesFile" className="text-base font-medium text-gray-900 dark:text-white">
+              <Label
+                htmlFor="slidesFile"
+                className="text-base font-medium text-gray-900 dark:text-white"
+              >
                 Upload Your Slides
               </Label>
               <div className="border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-300 dark:hover:border-gray-500 transition-colors bg-gray-50 dark:bg-gray-700/50 min-h-40 flex flex-col justify-center">
@@ -142,8 +298,12 @@ export function QuizBattererator() {
                       <>
                         <CheckCircle className="w-10 h-10 text-green-500" />
                         <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">{slidesFile.name}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Click to change slides</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {slidesFile.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Click to change slides
+                          </p>
                         </div>
                       </>
                     ) : (
@@ -153,7 +313,9 @@ export function QuizBattererator() {
                           <p className="text-sm font-medium text-gray-900 dark:text-white">
                             Upload Presentation Slides
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">PowerPoint, PDF, Keynote supported</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            PowerPoint, PDF, Keynote supported
+                          </p>
                         </div>
                       </>
                     )}
@@ -165,14 +327,17 @@ export function QuizBattererator() {
 
           {/* Number of Quizzes */}
           <div className="space-y-2">
-            <Label htmlFor="numQuizzes" className="text-base font-medium text-gray-900 dark:text-white">
+            <Label
+              htmlFor="numQuizzes"
+              className="text-base font-medium text-gray-900 dark:text-white"
+            >
               Number of Questions *
             </Label>
             <Input
               id="numQuizzes"
               type="number"
-              min="1"
-              max="20"
+              min={1}
+              max={20}
               value={numQuizzes}
               onChange={(e) => setNumQuizzes(Number.parseInt(e.target.value) || 5)}
               className="border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white max-w-xs"
@@ -182,7 +347,10 @@ export function QuizBattererator() {
 
           {/* Student Questions */}
           <div className="space-y-2">
-            <Label htmlFor="questions" className="text-base font-medium text-gray-900 dark:text-white">
+            <Label
+              htmlFor="questions"
+              className="text-base font-medium text-gray-900 dark:text-white"
+            >
               Specific Questions to Cover (Optional)
             </Label>
             <Textarea
@@ -196,7 +364,10 @@ export function QuizBattererator() {
 
           {/* Additional Materials Upload */}
           <div className="space-y-2">
-            <Label htmlFor="file" className="text-base font-medium text-gray-900 dark:text-white">
+            <Label
+              htmlFor="file"
+              className="text-base font-medium text-gray-900 dark:text-white"
+            >
               Upload Additional Materials (Optional)
             </Label>
             <div className="border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-300 dark:hover:border-gray-500 transition-colors bg-gray-50 dark:bg-gray-700/50">
@@ -213,8 +384,12 @@ export function QuizBattererator() {
                     <>
                       <CheckCircle className="w-12 h-12 text-green-500" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{file.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Click to change file</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {file.name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Click to change file
+                        </p>
                       </div>
                     </>
                   ) : (
