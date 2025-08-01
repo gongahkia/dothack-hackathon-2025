@@ -199,10 +199,7 @@ export function QuizBattererator() {
         throw new Error("error" in data ? data.error : "Failed to generate quiz")
       }
 
-      if ("raw_response" in data) {
-        setRawResponse(data.raw_response)
-        return
-      }
+      setRawResponse(data.raw_response)
 
       if ("quizzes" in data) {
         setQuizzes(data.quizzes)
@@ -219,26 +216,26 @@ export function QuizBattererator() {
     return <QuizDisplay quizzes={quizzes} onReset={() => setQuizzes([])} />
   }
 
-if (rawResponse) {
-  return (
-    <Card className="...">
-      <CardHeader className="...">
-        <CardTitle className="...">Quiz</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <InteractiveQuiz rawText={rawResponse} />
-        <div className="mt-6 text-center">
-          <Button
-            onClick={() => setRawResponse("")}
-            variant="outline"
-          >
-            Back to Quiz Generator
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
+  if (rawResponse) {
+    return (
+      <Card className="...">
+        <CardHeader className="...">
+          <CardTitle className="...">Quiz</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <InteractiveQuiz rawText={rawResponse} />
+          <div className="mt-6 text-center">
+            <Button
+              onClick={() => setRawResponse("")}
+              variant="outline"
+            >
+              Back to Quiz Generator
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   // Default: show the quiz generation form
   return (
