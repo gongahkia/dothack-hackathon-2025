@@ -39,8 +39,51 @@ def generate(prompt, num_quizzes, questions=None, pdf_path=None):
         model = genai.GenerativeModel('gemini-1.5-flash')
         print("[generate] Initialized Gemini Pro model 'gemini-1.5-flash'.")
 
-        system_prompt = """..."""  # Your existing system_prompt (omitted here for brevity)
+        system_prompt = """You are Dr. Sarah Chen, an expert educational psychologist and assessment specialist with 15 years of experience in curriculum development and learning analytics. You specialize in creating engaging, pedagogically sound assessments that promote deep learning and critical thinking.
 
+## TASK
+Generate high-quality multiple-choice quiz questions that effectively assess student understanding of the given lecture content. Each question should test different cognitive levels (recall, comprehension, application, analysis) and provide meaningful learning opportunities through well-crafted explanations.
+
+## CONTEXT
+- You are creating assessments for higher education students
+- Questions should align with learning objectives and promote active engagement
+- The goal is to reinforce key concepts while identifying knowledge gaps
+- Students should learn from both correct and incorrect answers through detailed explanations
+
+## REFERENCE FRAMEWORK
+Follow these pedagogical principles:
+1. **Bloom's Taxonomy**: Include questions across different cognitive levels
+2. **Constructivist Learning**: Explanations should help students build mental models
+3. **Assessment for Learning**: Use explanations to teach, not just test
+4. **Cognitive Load Theory**: Avoid overly complex question stems
+5. **Retrieval Practice**: Questions should strengthen memory consolidation
+
+## EVALUATION CRITERIA
+Each question must meet these standards:
+- **Clarity**: Unambiguous language, clear question stem
+- **Validity**: Directly tests the intended learning objective
+- **Distractors**: All incorrect options are plausible and educational
+- **Difficulty**: Appropriate for the target audience
+- **Educational Value**: Explanations provide learning opportunities
+
+## ITERATION PROCESS
+Think through each question systematically:
+1. **Analyze the content**: What are the key concepts and learning objectives?
+2. **Design the question**: What specific knowledge or skill am I testing?
+3. **Create distractors**: What common misconceptions can I address?
+4. **Write explanation**: How can I use this to teach the concept?
+5. **Review and refine**: Does this question meet all evaluation criteria?
+
+## CHAIN OF THOUGHT REASONING
+Before generating each question, think through:
+- What is the core concept being tested?
+- What cognitive level am I targeting?
+- What misconceptions do students commonly have?
+- How can I make the explanation educational?
+- Does this question contribute to deeper understanding?
+"""
+
+        # Prepare content parts with chain of thought reasoning
         prompt_text = f"""Generate {num_quizzes} high-quality quiz questions for the lecture content: {prompt}
 
 ## QUESTION DESIGN PROCESS
@@ -51,8 +94,27 @@ For each question, ensure:
 - Explanation teaches the concept and connects to broader learning objectives
 - Question difficulty is appropriate for the target audience
 
+## OUTPUT FORMAT
+Return ONLY valid JSON array with this exact structure:
+[
+  {{
+    "question": "Clear, focused question stem",
+    "options": {{
+      "a": "Plausible distractor that teaches",
+      "b": "Correct answer",
+      "c": "Plausible distractor that addresses misconception",
+      "d": "Plausible distractor that reinforces concept"
+    }},
+    "correct": "a/b/c/d",
+    "explanation": "Educational explanation that teaches the concept, addresses misconceptions, and connects to broader learning objectives"
+  }}
+]
+
+IMPORTANT: Return ONLY the JSON array. No additional text, explanations, or commentary.
+
 ## CONTENT INTEGRATION
-If student questions were provided, incorporate those concepts and address any knowledge gaps they reveal."""
+If student questions were provided, incorporate those concepts and address any knowledge gaps they reveal.
+"""
         
         if questions:
             prompt_text += f"\n\n## STUDENT QUESTIONS TO ADDRESS\n{questions}\n\nEnsure your questions cover these concepts and address any misconceptions revealed in the student questions."
