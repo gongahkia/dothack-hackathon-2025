@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Upload, FileText, Loader2, CheckCircle, Presentation } from "lucide-react"
 import { QuizDisplay } from "@/components/quiz-display"
-import { InteractiveQuiz } from "@/components/interactive-quiz" 
 
 interface Quiz {
   Question: string
@@ -101,58 +100,96 @@ export function QuizBattererator() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!prompt.trim()) {
-      setError("Please provide lecture content or topic")
-      return
+      setError("Please provide lecture content or topic");
+      return;
     }
 
-    setIsLoading(true)
-    setError("")
-    setRawResponse("")
-    setQuizzes([])
+    setIsLoading(true);
+    setError("");
+    setRawResponse("");
+    setQuizzes([]);
 
     try {
-      const formData = new FormData()
-      formData.append("prompt", prompt)
-      formData.append("num_quizzes", numQuizzes.toString())
+      const formData = new FormData();
+      formData.append("prompt", prompt);
+      formData.append("num_quizzes", numQuizzes.toString());
 
       if (questions.trim()) {
-        formData.append("questions", questions)
+        formData.append("questions", questions);
       }
 
       if (slidesFile) {
-        formData.append("file", slidesFile)
+        formData.append("file", slidesFile);
       } else if (file) {
-        formData.append("file", file)
+        formData.append("file", file);
       }
 
       const response = await fetch("http://localhost:5011/generate-quiz", {
         method: "POST",
         body: formData,
-      })
+      });
 
-      const rawJSON = await response.text() 
+      const text = await response.text();
+
       if (!response.ok) {
-        throw new Error(rawJSON || "Failed to generate quiz");
+        throw new Error(text || "Failed to generate quiz");
       }
 
-      const parsedQuestions = parseRawQuiz(rawJSON);
-      if (parsedQuestions.length === 0) {
-        throw new Error("No quiz questions parsed from backend response");
+      // Parse outer object
+      const outer = JSON.parse(text);
+
+      if (!outer.raw_response) {
+        throw new Error("Response missing 'raw_response' field");
       }
-      setQuizzes(parsedQuestions);
+
+      // Parse inner JSON string with quiz array
+      const quizArray = JSON.parse(outer.raw_response);
+
+      if (!Array.isArray(quizArray) || quizArray.length === 0) {
+        throw new Error("No quiz questions parsed from response");
+      }
+
+      // Map quizArray into ParsedQuestion types
+      const parsedQuestions = quizArray.map((item: any, idx: number) => {
+        const optionsArray: { label: string; text: string }[] = [];
+
+        if (item.options && typeof item.options === "object") {
+          for (const [key, value] of Object.entries(item.options)) {
+            optionsArray.push({ label: key.toLowerCase(), text: String(value) });
+          }
+          optionsArray.sort((a, b) => a.label.localeCompare(b.label));
+        }
+
+        return {
+          stem: item.question ?? `Question ${idx + 1}`,
+          options: optionsArray,
+          correctAnswer: (item.correct ?? "").toLowerCase(),
+          explanation: item.explanation ?? "",
+        };
+      });
+
+      console.log("Parsed questions:", parsedQuestions);
+      const quizArray2: Quiz[] = parsedQuestions.map(q => ({
+        Question: q.stem,
+        Options: q.options.map(opt => opt.text),
+        Correct: q.correctAnswer,
+        Explanation: q.explanation,
+      }));
+      setQuizzes(quizArray2);
       setRawResponse("");
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred")
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   if (quizzes.length > 0) {
+    console.log("Rendering QuizDisplay with quizzes:", quizzes);
     return <QuizDisplay quizzes={quizzes} onReset={() => setQuizzes([])} />;
   }
 
