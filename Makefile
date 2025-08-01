@@ -1,11 +1,6 @@
 .PHONY: backend frontend dev
 
-backend:
-	python3 backend.py
+all:dev
 
-frontend:
-	npm run dev
-
-dev:
-	# The & allows both to run concurrently
-	$(MAKE) backend & $(MAKE) frontend
+dev: 
+	python3 run_servers.py

@@ -4,8 +4,8 @@ import time
 
 # Adjust these as needed
 BACKEND_COMMAND = [sys.executable, "backend.py"]  # or "app.py"
-FRONTEND_COMMAND = ["npm", "start"]  # or "yarn start" if you use Yarn
-FRONTEND_PATH = "path/to/react-frontend"  # Change to your React app folder
+FRONTEND_COMMAND = ["npm", "run", "dev"]  # or "yarn start" if you use Yarn
+FRONTEND_PATH = "."
 
 # Start the backend
 backend_proc = subprocess.Popen(BACKEND_COMMAND)
