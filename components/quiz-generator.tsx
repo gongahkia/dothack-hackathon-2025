@@ -218,33 +218,32 @@ export function QuizBattererator() {
     return <QuizDisplay quizzes={quizzes} onReset={() => setQuizzes([])} />
   }
 
-  // Show nicely formatted raw AI response if present
-  if (rawResponse) {
-    return (
-      <Card className="border-0 shadow-lg bg-white dark:bg-gray-800 border dark:border-gray-700 p-6">
-        <CardHeader className="text-center pb-4">
-          <CardTitle className="text-2xl font-semibold text-gray-900 dark:text-white">
-            Raw AI Quiz Response
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RawQuizResponseDisplay rawText={rawResponse} />
-          <div className="mt-6 text-center">
-            <Button
-              onClick={() => {
-                setRawResponse("")
-                setError("")
-                setQuizzes([])
-              }}
-              variant="outline"
-            >
-              Back to Quiz Generator
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
+if (rawResponse) {
+  return (
+    <Card className="border-0 shadow-lg bg-white dark:bg-gray-800 border dark:border-gray-700 p-6">
+      <CardHeader className="text-center pb-4">
+        <CardTitle className="text-2xl font-semibold text-gray-900 dark:text-white">
+          Raw AI Quiz Response
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <RawQuizResponseDisplay rawText={rawResponse} />
+        <div className="mt-6 text-center">
+          <Button
+            onClick={() => {
+              setRawResponse("")
+              setError("")
+              setQuizzes([])
+            }}
+            variant="outline"
+          >
+            Back to Quiz Generator
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
   // Default: show the quiz generation form
   return (
