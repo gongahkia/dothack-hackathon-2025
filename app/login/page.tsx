@@ -33,10 +33,14 @@ export default function LoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
+      // Redirect based on role
+      if (step === "teacher") {
+        router.push("/teacher-dashboard");
+      } else {
+        router.push("/student-dashboard");
+      }
     } catch (err: any) {
       if (err.code === "auth/user-not-found") {
-        // Prompt to register if user not found
         setError("User not found. Would you like to register?");
         setMode("register");
       } else if (err.code === "auth/wrong-password") {
@@ -48,6 +52,7 @@ export default function LoginPage() {
     }
   };
 
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoggingIn(true);
@@ -55,7 +60,12 @@ export default function LoginPage() {
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
+      // Redirect based on role
+      if (step === "teacher") {
+        router.push("/teacher-dashboard");
+      } else {
+        router.push("/student-dashboard");
+      }
     } catch (err: any) {
       if (err.code === "auth/email-already-in-use") {
         setError("Email already in use. Please login.");
@@ -68,6 +78,7 @@ export default function LoginPage() {
       setLoggingIn(false);
     }
   };
+
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FFF4E6" }}>
