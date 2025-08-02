@@ -21,7 +21,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
             <Card className="border-0 shadow-sm bg-white ">
               <CardContent className="p-8 text-center">
-                <Brain className="w-12 h-12 text-blue-600  mx-auto mb-4" />
+                <Brain className="w-12 h-12 text-[#F4B6A7]  mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900  mb-4">AI-Powered Intelligence</h3>
                 <p className="text-gray-600 ">
                   Our platform uses Google's advanced Gemini AI to understand your content and generate relevant,
@@ -32,7 +32,7 @@ export default function AboutPage() {
 
             <Card className="border-0 shadow-sm bg-white ">
               <CardContent className="p-8 text-center">
-                <Zap className="w-12 h-12 text-green-600  mx-auto mb-4" />
+                <Zap className="w-12 h-12 text-[#D8BFA2]  mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900  mb-4">Lightning Fast</h3>
                 <p className="text-gray-600 ">
                   Generate comprehensive quizzes in seconds, not hours. Perfect for educators and students with tight
@@ -43,7 +43,7 @@ export default function AboutPage() {
 
             <Card className="border-0 shadow-sm bg-white ">
               <CardContent className="p-8 text-center">
-                <Shield className="w-12 h-12 text-purple-600  mx-auto mb-4" />
+                <Shield className="w-12 h-12 text-[#D8BFA2]  mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900  mb-4">Privacy First</h3>
                 <p className="text-gray-600">
                   Your files are processed securely and deleted immediately after quiz generation. We never store your
@@ -54,7 +54,7 @@ export default function AboutPage() {
 
             <Card className="border-0 shadow-sm bg-white ">
               <CardContent className="p-8 text-center">
-                <Users className="w-12 h-12 text-orange-600  mx-auto mb-4" />
+                <Users className="w-12 h-12 text-[#F4B6A7]  mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900  mb-4">Built for Everyone</h3>
                 <p className="text-gray-600 ">
                   Whether you're a teacher, student, or trainer, our intuitive interface makes quiz creation accessible

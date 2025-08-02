@@ -54,13 +54,14 @@ const teamMembers = [
   },
   {
     name: "Ms. Nichole Bun",
-    role: "Education Specialist",
-    bio: "Nichole dives into datasets to uncover what really matters. She brings structure, strategy, and a whole lot of pivot tables to the team.",
+    role: "Frontend & UX Specialist",
+    bio: "Bridging code and creativity, Nichole shapes pages, themes, and interfaces that work as beautifully as they look. She blends thoughtful design with smooth functionality, making sure every interaction feels just right.",
     image: "/team/nichole.jpeg",
-    skills: ["Reliable", "Perceptive", "Grounded"],
+    skills: ["Creative", "Versatile", "Detail-oriented"],
     social: {
       linkedin: "#",
       twitter: "#",
+      github: "#",
     },
   },
   {
@@ -118,16 +119,16 @@ export default function TeamPage() {
 
                   <h3 className="text-xl font-semibold text-gray-900  mb-2">{member.name}</h3>
 
-                  <p className="text-blue-600  font-medium mb-4">{member.role}</p>
+                  <p className="text-[#e89ca0]  font-medium mb-4">{member.role}</p>
 
-                  <p className="text-gray-600  text-sm leading-relaxed mb-6">{member.bio}</p>
+                  <p className="text-[#4E342E]  text-sm leading-relaxed mb-6">{member.bio}</p>
 
                   <div className="flex flex-wrap gap-2 justify-center mb-6">
                     {member.skills.map((skill, skillIndex) => (
                       <Badge
                         key={skillIndex}
                         variant="secondary"
-                        className="text-xs bg-gray-100  text-gray-700 "
+                        className="text-xs bg-[#eddaca]  text-gray-700 "
                       >
                         {skill}
                       </Badge>
@@ -138,20 +139,20 @@ export default function TeamPage() {
                     {member.social.linkedin && (
                       <a
                         href={member.social.linkedin}
-                        className="text-gray-400 hover:text-blue-600  transition-colors"
+                        className="text-[#8B6C53] hover:text-[#F4B6A7]  transition-colors"
                       >
                         <Linkedin className="w-5 h-5" />
                       </a>
                     )}
                     {member.social.twitter && (
-                      <a href={member.social.twitter} className="text-gray-400 hover:text-blue-400 transition-colors">
+                      <a href={member.social.twitter} className="text-[#8B6C53] hover:text-[#F4B6A7] transition-colors">
                         <Twitter className="w-5 h-5" />
                       </a>
                     )}
                     {member.social.github && (
                       <a
                         href={member.social.github}
-                        className="text-gray-400 hover:text-gray-600  transition-colors"
+                        className="text-[#8B6C53] hover:text-[#F4B6A7]  transition-colors"
                       >
                         <Github className="w-5 h-5" />
                       </a>
@@ -171,7 +172,7 @@ export default function TeamPage() {
             <div className="text-center">
               <a
                 href="https://youtu.be/dQw4w9WgXcQ?si=OKUpDjV3emMYxcgg"
-                className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full transition-colors"
+                className="inline-flex items-center px-6 py-3 bg-[#8B6C53] hover:bg-blue-700 text-white font-medium rounded-full transition-colors"
               >
                 View Open Positions
               </a>
