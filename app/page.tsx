@@ -23,15 +23,6 @@ export default function HomePage() {
       <Navigation />
       <main>
         <HeroSection />
-        {/* Add Login button somewhere visible */}
-        <div className="flex justify-center my-8">
-          <button
-            onClick={() => setShowLogin(true)}
-            className="px-6 py-3 bg-[#8B6C53] hover:bg-[#7A5B3F] text-white font-semibold rounded-md transition"
-          >
-            Login
-          </button>
-        </div>
         <FeaturesSection />
       </main>
 
