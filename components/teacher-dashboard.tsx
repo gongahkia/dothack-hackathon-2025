@@ -42,6 +42,14 @@ export function TeacherDashboard({ students }: TeacherDashboardProps) {
             </li>
             <li>
               <a
+                href="/generate-report"
+                className="block px-4 py-2 rounded bg-gray-100 dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-gray-700 font-medium transition"
+              >
+                Generate Reports
+              </a>
+            </li>
+            <li>
+              <a
                 href="/past-quizzes"
                 className="block px-4 py-2 rounded bg-gray-100 dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-gray-700 font-medium transition"
               >
