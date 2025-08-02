@@ -5,8 +5,8 @@ import { Brain, Zap, Shield, Users, FileText, Search, Upload, Database, CheckCir
 export default function AboutPage() {
   return (
     <div
-      className="absolute top-0 left-0 w-full h-full bg-cover bg-center -z-10"
-      style={{ backgroundImage: "url('images/kitchen.jpg')" }}
+      className="bg-cover bg-fixed bg-center"
+      style={{ backgroundImage: "url('images/hero-background.png')" }}
     >
       <Navigation />
       <main className="py-12">
