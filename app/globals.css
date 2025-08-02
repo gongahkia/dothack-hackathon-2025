@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Maghfirea';
+  src: url('/fonts/maghfirea.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* CSS Variables for shadcn/ui compatibility */
 @layer base {
   :root {

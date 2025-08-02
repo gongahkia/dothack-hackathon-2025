@@ -8,7 +8,7 @@ export function HeroSection() {
   return (
   <section
     className="relative min-h-screen flex items-center justify-center overflow-hidden bg-cover bg-center"
-    style={{ backgroundImage: "url('images/kitchen.jpg')" }}
+    style={{ backgroundImage: "url('images/hero-background.png')" }}
   >
 
       {/* Floating Elements */}
@@ -40,7 +40,7 @@ export function HeroSection() {
         <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900  mb-6 leading-tight"
             style={{ textShadow: "2px 2px 4px rgba(0, 0, 0, 0.4)" }}>
           Whip Up
-          <span className="block" style={{ color: "#8B6C53" }}>Better Quizzes</span>
+          <span className="block font-maghfirea" style={{ color: "#8B6C53" }}>Better Quizzes</span>
           <span className="block text-gray-900 ">with QuizBatter</span>
         </h1>
 
