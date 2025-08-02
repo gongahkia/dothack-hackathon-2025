@@ -93,17 +93,23 @@ export function HeroSection() {
         </motion.p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-        <Button
-          asChild
-          size="lg"
-          className="text-white px-8 py-4 text-lg rounded-full"
-          style={{ backgroundColor: "#4E342E" }}
-        >
-            <Link href="/generate" className="flex items-center gap-2">
-              Start Baking
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          </Button>
+          <motion.div
+            whileHover={{ scale: 1.07, rotate: -2, boxShadow: "0 8px 32px 0 rgba(78,52,46,0.18)" }}
+            transition={{ type: "spring", stiffness: 300, damping: 15 }}
+            className="w-full sm:w-auto"
+          >
+            <Button
+              asChild
+              size="lg"
+              className="text-white px-8 py-4 text-lg rounded-full"
+              style={{ backgroundColor: "#4E342E" }}
+            >
+              <Link href="/generate" className="flex items-center gap-2">
+                Start Baking
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </Button>
+          </motion.div>
 
           <Button
             asChild
