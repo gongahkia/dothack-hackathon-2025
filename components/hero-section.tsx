@@ -72,7 +72,7 @@ export function HeroSection() {
         </div>
 
         <div className="mt-12 text-sm text-gray-900 dark:text-white">
-          Powered by Google Gemini AI • Free to use • No signup required
+          Powered by Google Gemini AI • Free to use
         </div>
       </div>
     </section>
