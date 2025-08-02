@@ -67,65 +67,52 @@ def analyze_quiz_with_ai(quiz_data):
     """Use Gemini to analyze quiz content and provide educational insights."""
     try:
         model = genai.GenerativeModel('gemini-2.5-pro')
-        
-        # Prepare quiz content for analysis
-        quiz_content = {
-            "prompt": quiz_data.get('prompt', ''),
-            "questions": []
-        }
-        
+        # Prepare student responses and questions for analysis
+        questions = []
+        responses = []
         for i, quiz in enumerate(quiz_data['quiz_questions'], 1):
-            quiz_content["questions"].append({
+            questions.append({
                 "number": i,
                 "question": quiz['question'],
                 "options": quiz.get('options', {}),
                 "correct": quiz.get('correct', ''),
                 "explanation": quiz['explanation']
             })
-        
+            # If student responses are present in the JSON, collect them
+            if 'responses' in quiz:
+                responses.append({
+                    "number": i,
+                    "student_responses": quiz['responses']
+                })
+
         analysis_prompt = f"""
-        You are an educational data analyst and designer. Your goal is to create a visually engaging, student-centered report based on the quiz responses below. Focus on how students performed, what they learned, and how the assessment experience can be improved for them.
+        As an educational data analyst, analyze the following student responses and quiz questions. Focus on:
+        - Patterns in student answers (common errors, misconceptions, strengths)
+        - The effectiveness and clarity of each question
+        - How student responses align with the intended learning objectives
+        - Actionable recommendations for improving both questions and student understanding
 
-        Quiz Topic: {quiz_content['prompt']}
-        Number of Questions: {len(quiz_content['questions'])}
+        Questions:
+        {json.dumps(questions, indent=2)}
 
-        Questions and Answers:
-        {json.dumps(quiz_content['questions'], indent=2)}
+        Student Responses:
+        {json.dumps(responses, indent=2) if responses else 'No student responses available.'}
 
-        Please provide a detailed, visually-oriented analysis covering:
-
-        1. STUDENT RESPONSE INSIGHTS:
-           - What do the student answers reveal about their understanding and misconceptions?
-           - Highlight patterns in correct/incorrect responses and what they mean for learning.
-           - Suggest ways to visually present these insights (charts, word clouds, etc.).
-
-        2. LEARNING OUTCOMES:
-           - What key concepts did students grasp well? Where did they struggle?
-           - How did explanations help students learn from their mistakes?
-           - Recommend actionable next steps for students based on their responses.
-
-        3. ENGAGEMENT & MOTIVATION:
-           - How engaging was the quiz for students? Did it promote curiosity or deeper thinking?
-           - Suggest improvements to make the assessment more motivating and student-friendly.
-
-        4. VISUAL DESIGN SUGGESTIONS:
-           - Propose creative ways to present student performance and feedback visually in the PDF (e.g., infographics, color coding, icons).
-           - Recommend layout and design elements that make the report easy and enjoyable for students to read.
-
-        5. ACTIONABLE RECOMMENDATIONS FOR STUDENTS:
-           - Give personalized advice for students based on their quiz performance.
-           - Suggest follow-up activities, resources, or reflection prompts to deepen learning.
-
-        6. TEACHER FEEDBACK:
-           - What should educators focus on in future lessons based on student responses?
-           - How can teachers use this report to support individual and group learning needs?
-
-        Format your response in clear, visually-structured sections. Use bullet points, headings, and design ideas. Focus on making the report useful and engaging for students, not just a summary of the quiz.
+        Please structure your analysis with clear sections:
+        1. Student Response Patterns
+        2. Question Effectiveness
+        3. Alignment with Learning Objectives
+        4. Recommendations for Educators
+        Format your response for direct inclusion in a report (no asterisks or markdown, use clear paragraphs and bullet points if needed).
         """
-        
         response = model.generate_content(analysis_prompt)
-        return response.text
-        
+        # Clean up asterisks and markdown from the AI output
+        text = response.text
+        # Remove leading asterisks and extra whitespace from lines
+        lines = [line.lstrip('*').strip() for line in text.splitlines()]
+        # Remove empty lines and join with double newlines for paragraph breaks
+        cleaned = '\n\n'.join([line for line in lines if line])
+        return cleaned
     except Exception as e:
         print(f"WARNING: Could not generate AI analysis: {e}")
         return "AI analysis unavailable. Please check your Gemini API configuration."
@@ -136,12 +123,34 @@ def analyze_feedback_with_ai(feedback_data, numeric_stats):
         model = genai.GenerativeModel('gemini-2.5-pro')
         
         # Prepare feedback summary
+        import numpy as np
+        def make_json_serializable(obj):
+            if isinstance(obj, dict):
+                return {k: make_json_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [make_json_serializable(v) for v in obj]
+            elif isinstance(obj, (np.integer, np.floating)):
+                return obj.item()
+            else:
+                return obj
+
         feedback_summary = {}
         if feedback_data:
             for col, word_freq in feedback_data.items():
-                top_words = list(word_freq.items())[:10]
-                feedback_summary[col] = top_words
-        
+                top_words = list(word_freq.items())[:10] if hasattr(word_freq, 'items') else word_freq
+                feedback_summary[col] = make_json_serializable(top_words)
+
+        # Convert numeric_stats to serializable form if needed
+        numeric_stats_json = None
+        if numeric_stats is not None:
+            try:
+                numeric_stats_json = json.dumps(make_json_serializable(numeric_stats.to_dict()), indent=2)
+            except Exception as e:
+                print(f"WARNING: Could not serialize numeric_stats: {e}")
+                numeric_stats_json = numeric_stats.to_string()
+        else:
+            numeric_stats_json = "No numeric data available"
+
         analysis_prompt = f"""
         As an educational expert, analyze this student feedback data and provide insights for course improvement:
 
@@ -149,7 +158,7 @@ def analyze_feedback_with_ai(feedback_data, numeric_stats):
         {json.dumps(feedback_summary, indent=2)}
 
         QUANTITATIVE RATINGS:
-        {numeric_stats.to_string() if numeric_stats is not None else "No numeric data available"}
+        {numeric_stats_json}
 
         Please provide analysis covering:
 
@@ -180,7 +189,6 @@ def analyze_feedback_with_ai(feedback_data, numeric_stats):
 
         Provide specific, actionable insights that an educator can implement.
         """
-        
         response = model.generate_content(analysis_prompt)
         return response.text
         
@@ -352,22 +360,22 @@ def analyze_quiz_content(quiz_data):
     return analysis
 
 def load_feedback_data():
-    """Load and analyze feedback CSV if available."""
+    """Load and analyze feedback CSV if available, and student JSON files if provided."""
+    import glob
+    import pandas as pd  # Ensure pandas is available for all uses in this function
+    feedback_analysis = {}
+    numeric_summary = None
+    open_ended_cols = []
+    numeric_cols = []
+    # Load CSV feedback as before
     try:
         df = pd.read_csv(feedback_file_path, encoding="ISO-8859-1")
-        
-        # Assume first 5 columns are open-ended, rest are numeric
         if len(df.columns) >= 5:
             open_ended_cols = df.columns[:5]
             numeric_cols = df.columns[5:]
-            
-            # Preprocess open-ended text
             df_cleaned = df.copy()
             for col in open_ended_cols:
                 df_cleaned[col] = df_cleaned[col].apply(preprocess_text)
-            
-            # Generate word frequencies for feedback
-            feedback_analysis = {}
             for col in open_ended_cols:
                 text = ' '.join(df_cleaned[col].dropna())
                 if text.strip():
@@ -380,18 +388,50 @@ def load_feedback_data():
                         )
                     except:
                         feedback_analysis[col] = {}
-            
-            # Numeric statistics
             numeric_summary = df[numeric_cols].describe().round(2) if len(numeric_cols) > 0 else None
-            
-            return feedback_analysis, numeric_summary, open_ended_cols, numeric_cols
-        
     except FileNotFoundError:
         print("INFO: No feedback CSV found. Generating quiz-only report.")
     except Exception as e:
         print(f"WARNING: Error loading feedback data: {e}")
-    
-    return None, None, [], []
+
+    # --- NEW: Load student JSON files ---
+    student_files = glob.glob("student_response_*.json")
+    print(f"DEBUG: Found student response files: {student_files}")
+    student_results = []
+    for sf in student_files:
+        try:
+            with open(sf, "r", encoding="utf-8") as f:
+                student_data = json.load(f)
+                print(f"DEBUG: Loaded student data from {sf}: {student_data}")
+                student_results.append(student_data)
+        except Exception as e:
+            print(f"WARNING: Could not load {sf}: {e}")
+
+    # Aggregate student results for analysis
+    if student_results:
+        print(f"DEBUG: Aggregating {len(student_results)} student results...")
+        # For each question, count correct/wrong
+        question_stats = {}
+        for student in student_results:
+            for idx, res in enumerate(student.get('results', [])):
+                qtext = res.get('question', f"Q{idx+1}")
+                if qtext not in question_stats:
+                    question_stats[qtext] = {'correct': 0, 'wrong': 0}
+                if res.get('is_correct'):
+                    question_stats[qtext]['correct'] += 1
+                else:
+                    question_stats[qtext]['wrong'] += 1
+        print(f"DEBUG: Aggregated question stats: {question_stats}")
+        # Add to feedback_analysis for reporting
+        feedback_analysis['Student Quiz Performance'] = question_stats
+        # Also create a numeric summary (as DataFrame)
+        perf_df = pd.DataFrame.from_dict(question_stats, orient='index')
+        print(f"DEBUG: Student performance DataFrame:\n{perf_df}")
+        if not perf_df.empty:
+            numeric_summary = perf_df.describe().round(2)
+            print(f"DEBUG: Student performance summary:\n{numeric_summary}")
+
+    return feedback_analysis, numeric_summary, open_ended_cols, numeric_cols
 
 def create_enhanced_quiz_table(analysis):
     """Create an enhanced quiz analysis table."""
@@ -601,12 +641,17 @@ def generate_report():
     
     # 3. AI-Powered Insights
     story.append(Paragraph("3. AI-Powered Pedagogical Insights", heading_style))
-    
-    # Split AI analysis into paragraphs for better formatting
-    ai_paragraphs = ai_quiz_analysis.split('\n\n')
+    # Improved formatting: split into paragraphs and bullet points
+    ai_paragraphs = [p.strip() for p in ai_quiz_analysis.split('\n\n') if p.strip()]
     for paragraph in ai_paragraphs:
-        if paragraph.strip():
-            story.append(Paragraph(paragraph.strip(), normal_style))
+        # If the paragraph looks like a bullet list, format as bullet points
+        if paragraph.startswith('- '):
+            bullets = [item.strip('- ').strip() for item in paragraph.split('\n') if item.strip()]
+            for bullet in bullets:
+                story.append(Paragraph(f'• {bullet}', normal_style))
+                story.append(Spacer(1, 4))
+        else:
+            story.append(Paragraph(paragraph, normal_style))
             story.append(Spacer(1, 8))
     
     # 4. Visual Analytics
@@ -756,7 +801,10 @@ def generate_report():
 
     # ---------- BUILD THE PDF ----------
     try:
+        print(f"Attempting to save PDF to: {os.path.abspath(output_filename)}")
         doc.build(story)
+        print(f"PDF should now exist at: {os.path.abspath(output_filename)}")
+        print(f"File exists? {os.path.exists(output_filename)}")
         print(f"SUCCESS: Report generated – {output_filename}")
     except Exception as e:
         print(f"ERROR: Failed to generate PDF: {e}")

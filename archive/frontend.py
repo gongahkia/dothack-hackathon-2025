@@ -96,15 +96,24 @@ def generate_comprehensive_report():
                 [python_path, os.path.join(project_root, "generate_report.py")],
                 capture_output=True,
                 text=True,
-                timeout=120
+                timeout=120,
+                cwd=project_root  # Set working directory to project root
             )
+
+        # Always show debug output from report generation, even on failure
+        st.markdown("---")
+        st.subheader("🛠️ Report Generation Debug Output")
+        if result.stdout:
+            st.text_area("Report Generation Output", result.stdout, height=300)
+        if result.stderr:
+            st.text_area("Report Generation Errors", result.stderr, height=200)
 
         if result.returncode == 0:
             st.success("✅ Comprehensive report generated successfully!")
             st.info("📄 Report saved as: comprehensive_class_report.pdf")
             return True
         else:
-            st.error(f"❌ Report generation failed: {result.stderr}")
+            st.error(f"❌ Report generation failed. See debug output above.")
             return False
 
     except subprocess.TimeoutExpired:
@@ -149,16 +158,36 @@ if st.session_state["page"] == "final":
             i += 1
         st.write(f"**Your Score: {score} out of {len(quiz_data)}**")
     
-    # Report Generation Section
+    # Automatically save student response JSON to backend after quiz is done
+    import requests
+    import json
+    if "student_response_saved" not in st.session_state:
+        answers = {str(i+1): ans for i, ans in st.session_state["user_answers"].items()}
+        payload = {
+            "prompt": quiz_data[0].get("prompt", ""),
+            "num_quizzes": len(quiz_data),
+            "student_answers": json.dumps(answers),
+            "student_id": os.environ.get("USER", "student")
+        }
+        try:
+            resp = requests.post("http://127.0.0.1:5011/generate-quiz", data=payload, timeout=30)
+            if resp.status_code == 200:
+                st.session_state["student_response_saved"] = True
+                st.success("✅ Your quiz response has been saved for analysis.")
+            else:
+                st.session_state["student_response_saved"] = False
+                st.error(f"❌ Failed to save response: {resp.status_code} {resp.text}")
+        except Exception as e:
+            st.session_state["student_response_saved"] = False
+            st.error(f"❌ Error saving response: {e}")
+
     st.markdown("---")
     st.subheader("📊 Generate Comprehensive Report")
     st.write("Create a detailed report analyzing the quiz content and class feedback.")
-    
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Generate Report", type="primary"):
             generate_comprehensive_report()
-    
     with col2:
         if st.button("Restart"):
             st.session_state["page"] = "generator"
