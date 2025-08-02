@@ -15,25 +15,36 @@ export function GenerateReport() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [generationTime, setGenerationTime] = useState<string | null>(null);
 
-  // Optionally: Check existing report info, e.g., last modified time
   async function checkReport() {
     setError(null);
     setIsGenerating(true);
+    console.log("[GenerateReport] Checking existing report availability...");
+
     try {
       const res = await fetch(REPORT_DOWNLOAD_URL, { method: "HEAD" });
+      console.log(`[GenerateReport] HEAD ${REPORT_DOWNLOAD_URL} responded with status: ${res.status}`);
+
       if (res.ok) {
         setDownloadUrl(REPORT_DOWNLOAD_URL);
         setIsGenerated(true);
-        // Get time (if server provides it)
+
         const lastModified = res.headers.get("Last-Modified");
-        if (lastModified) setGenerationTime(lastModified);
+        if (lastModified) {
+          setGenerationTime(lastModified);
+          console.log(`[GenerateReport] Report last modified at: ${lastModified}`);
+        } else {
+          console.log("[GenerateReport] No Last-Modified header found.");
+        }
       } else {
+        console.warn(`[GenerateReport] Report not found or not accessible (status ${res.status}).`);
         setIsGenerated(false);
         setDownloadUrl(null);
       }
     } catch (e) {
+      console.error("[GenerateReport] Error checking report availability:", e);
       setIsGenerated(false);
       setDownloadUrl(null);
+      setError("Unable to check report availability. Is the backend running?");
     } finally {
       setIsGenerating(false);
     }
@@ -45,32 +56,53 @@ export function GenerateReport() {
     setIsGenerated(false);
     setDownloadUrl(null);
     setGenerationTime(null);
+
+    console.log("[GenerateReport] Triggering report generation...");
+
     try {
       const res = await fetch(REPORT_TRIGGER_URL, { method: "POST" });
+      console.log(`[GenerateReport] POST ${REPORT_TRIGGER_URL} responded with status: ${res.status}`);
+
       if (!res.ok) {
         const text = await res.text();
+        console.error(`[GenerateReport] Backend error response: ${text}`);
         setError(text || "Failed to generate. Please check backend/logs.");
         setIsGenerating(false);
         return;
       }
-      const data = await res.json();
+
+      // Try parse JSON for more info
+      let data;
+      try {
+        data = await res.json();
+        console.log("[GenerateReport] Backend response data:", data);
+      } catch (jsonErr) {
+        console.warn("[GenerateReport] Failed to parse JSON from backend response:", jsonErr);
+        const text = await res.text();
+        setError(text || "Failed to parse backend response.");
+        setIsGenerating(false);
+        return;
+      }
+
       if (data && data.success) {
         setIsGenerated(true);
         setError(null);
-        // Optionally check if report is immediately available
+        // Set download link and check report meta
         setDownloadUrl(REPORT_DOWNLOAD_URL);
         checkReport();
       } else {
-        setError(data?.error || "Unknown server error.");
+        const msg = data?.error || "Unknown server error.";
+        console.error(`[GenerateReport] Backend returned error: ${msg}`);
+        setError(msg);
       }
     } catch (e) {
-      setError((e as Error).message);
+      console.error("[GenerateReport] Fetch error during report generation:", e);
+      setError((e as Error).message || "Unknown error occurred.");
     } finally {
       setIsGenerating(false);
     }
   }
 
-  // UI Rendering
   return (
     <Card className="max-w-xl mx-auto shadow-lg border-0 bg-white dark:bg-gray-800 mt-12">
       <CardHeader className="text-center pb-6">
@@ -111,7 +143,6 @@ export function GenerateReport() {
           </Button>
         </div>
 
-        {/* Show download when available */}
         {isGenerated && downloadUrl && (
           <a
             href={downloadUrl}
@@ -124,7 +155,7 @@ export function GenerateReport() {
             Download Latest Report
           </a>
         )}
-        {/* Show last generated time if available */}
+
         {generationTime && (
           <div className="mt-2 text-sm text-gray-800 dark:text-gray-200 flex items-center">
             <ShieldCheck className="w-4 h-4 mr-1 text-blue-600" />
@@ -132,7 +163,6 @@ export function GenerateReport() {
           </div>
         )}
 
-        {/* Success */}
         {isGenerated && (
           <div className="flex items-center bg-green-50 border border-green-200 dark:bg-green-800 dark:border-green-700 rounded-lg p-3 mt-4">
             <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
@@ -142,7 +172,6 @@ export function GenerateReport() {
           </div>
         )}
 
-        {/* Error */}
         {error && (
           <div className="flex items-center bg-red-50 border border-red-200 dark:bg-red-800 dark:border-red-700 rounded-lg p-3 mt-4">
             <FileWarning className="w-5 h-5 text-red-700 mr-2" />
