@@ -14,17 +14,40 @@ interface ShowPastQuizzesProps {
 
 export function ShowPastQuizzes({ quizzes }: ShowPastQuizzesProps) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 max-w-5xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+    <div
+      className="rounded-lg shadow-md p-6 max-w-5xl mx-auto"
+      style={{ backgroundColor: "#FFF4E6" }} // 🥛 Soft Contrast - Vanilla Cream
+    >
+      <h2
+        className="text-2xl font-bold mb-4"
+        style={{ color: "#4E342E" }} // 🍫 Headings - Deep Brown
+      >
         Past Quizzes
       </h2>
       {quizzes.length === 0 ? (
-        <p className="text-gray-600 dark:text-gray-400 italic">No past quizzes found.</p>
+        <p
+          className="italic"
+          style={{ color: "#8B6C53" }} // 🍪 Text Base - Mocha Brown
+        >
+          No past quizzes found.
+        </p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="min-w-full table-auto">
+          <table
+            className="min-w-full table-auto"
+            style={{
+              borderCollapse: "collapse",
+              width: "100%",
+            }}
+          >
             <thead>
-              <tr className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+              <tr
+                style={{
+                  backgroundColor: "#FFD7A5", // 🍑 Main Accent - Peach Beige
+                  color: "#4E342E", // 🍫 Headings - Deep Brown
+                  fontWeight: "bold",
+                }}
+              >
                 <th className="p-3 text-left">Title</th>
                 <th className="p-3 text-left">Date Created</th>
                 <th className="p-3 text-left"># Questions</th>
@@ -35,7 +58,12 @@ export function ShowPastQuizzes({ quizzes }: ShowPastQuizzesProps) {
               {quizzes.map((quiz) => (
                 <tr
                   key={quiz.id}
-                  className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  style={{
+                    borderBottom: "1px solid #D8BFA2", // 🧂 Subtle Neutral - Oat Beige
+                    backgroundColor: "#FFF4E6", // 🥛 Soft Contrast - Vanilla Cream
+                    color: "#8B6C53", // 🍪 Text Base - Mocha Brown
+                  }}
+                  className="hover:bg-[#F4B6A7]" // 🍓 Friendly Accent - Blush Pink on hover
                 >
                   <td className="p-3">{quiz.title}</td>
                   <td className="p-3">{new Date(quiz.dateCreated).toLocaleDateString()}</td>
@@ -43,7 +71,8 @@ export function ShowPastQuizzes({ quizzes }: ShowPastQuizzesProps) {
                   <td className="p-3">
                     <a
                       href={`/quizzes/${quiz.id}`}
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      style={{ color: "#4E342E", fontWeight: "600" }} // 🍫 Headings - Deep Brown
+                      className="hover:underline"
                     >
                       View Details
                     </a>
