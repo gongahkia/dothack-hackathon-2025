@@ -248,7 +248,11 @@ def generate_quiz():
                         os.fsync(sf.fileno())
                     print(f"✅ Student quiz result saved to {student_file}")
 
-                return jsonify(parsed_result)
+                return jsonify({
+                    "quiz_questions": parsed_result,
+                    "raw_response": result
+                })
+
             except json.JSONDecodeError as e:
                 print(f"JSON parsing error: {str(e)}")
                 print(f"Response content: {result}")
