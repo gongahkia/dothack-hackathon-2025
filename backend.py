@@ -197,7 +197,6 @@ def generate_quiz():
             # Try to parse JSON
             try:
                 parsed_result = json.loads(result)
-                
                 # Save quiz response to JSON file for report generation
                 quiz_data = {
                     "prompt": prompt,
@@ -206,12 +205,49 @@ def generate_quiz():
                     "quiz_questions": parsed_result,
                     "timestamp": datetime.now().isoformat()
                 }
-                
                 with open("quiz_response.json", "w", encoding="utf-8") as f:
                     json.dump(quiz_data, f, indent=2, ensure_ascii=False)
                     f.flush()
                     os.fsync(f.fileno())
                 print(f"✅ Quiz response saved to quiz_response.json (flushed)")
+
+                # --- NEW: Save student quiz result (correct/wrong) ---
+                # Expecting student answers in the request (as JSON string or dict)
+                student_answers = None
+                if 'student_answers' in data:
+                    try:
+                        student_answers = data['student_answers']
+                        if isinstance(student_answers, str):
+                            student_answers = json.loads(student_answers)
+                    except Exception as e:
+                        print(f"Could not parse student_answers: {e}")
+
+                if student_answers:
+                    # Compare student answers to correct answers
+                    student_result = {
+                        "student_id": data.get('student_id', f"student_{datetime.now().strftime('%Y%m%d%H%M%S')}")
+                    }
+                    results = []
+                    for idx, q in enumerate(parsed_result):
+                        qid = str(idx+1)
+                        correct = q.get('correct')
+                        student_answer = student_answers.get(qid) if isinstance(student_answers, dict) else None
+                        results.append({
+                            "question": q.get('question'),
+                            "student_answer": student_answer,
+                            "correct_answer": correct,
+                            "is_correct": student_answer == correct
+                        })
+                    student_result['results'] = results
+                    # Save to a uniquely named file
+                    student_id = student_result['student_id']
+                    student_file = f"student_response_{student_id}.json"
+                    with open(student_file, "w", encoding="utf-8") as sf:
+                        json.dump(student_result, sf, indent=2, ensure_ascii=False)
+                        sf.flush()
+                        os.fsync(sf.fileno())
+                    print(f"✅ Student quiz result saved to {student_file}")
+
                 return jsonify(parsed_result)
             except json.JSONDecodeError as e:
                 print(f"JSON parsing error: {str(e)}")
