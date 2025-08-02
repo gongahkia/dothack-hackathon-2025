@@ -218,7 +218,7 @@ export function QuizBattererator() {
                 placeholder="Enter your lecture content, topic, or key concepts you want to create quizzes about..."
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                className="min-h-40 resize-none border-gray-200  focus:border-blue-500 focus:ring-blue-500 bg-white  text-gray-900 "
+                className="min-h-40 resize-none border-gray-200  focus:border-[#F4B6A7] focus:ring-[#F4B6A7] bg-white  text-gray-900 "
                 required
               />
             </div>
@@ -255,7 +255,7 @@ export function QuizBattererator() {
                       </>
                     ) : (
                       <>
-                        <Presentation className="w-10 h-10 text-blue-500" />
+                        <Presentation className="w-10 h-10" style={{ color: "#F4B6A7" }} />
                         <div>
                           <p className="text-sm font-medium text-gray-900 ">
                             Upload Presentation Slides
@@ -378,7 +378,7 @@ export function QuizBattererator() {
           <Button
             type="submit"
             disabled={isLoading || !prompt.trim()}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 text-lg rounded-full disabled:opacity-50"
+            className="w-full bg-[#4E342E] hover:bg-[#3a241c] text-white py-4 text-lg rounded-full disabled:opacity-50"
           >
             {isLoading ? (
               <>

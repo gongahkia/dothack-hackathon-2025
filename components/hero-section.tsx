@@ -41,7 +41,7 @@ export function HeroSection() {
             style={{ textShadow: "2px 2px 4px rgba(0, 0, 0, 0.4)" }}>
           Whip Up
             <span className="block font-kualine" style={{ color: "#8B6C53" }}>Better Quizzes</span>
-          <span className="block text-gray-900 ">with QuizBatter</span>
+          <span className="block font-kualine text-gray-900 ">with QuizBatter</span>
         </h1>
 
         <p className="text-xl sm:text-2xl text-gray-900  mb-8 max-w-2xl mx-auto leading-relaxed">
