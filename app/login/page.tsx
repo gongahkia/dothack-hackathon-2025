@@ -36,21 +36,39 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 ">
+    <div className="min-h-screen" style={{ backgroundColor: "#FFF4E6" }}>
       <Navigation />
       <main className="py-24 flex items-center justify-center min-h-[60vh]">
         {!step ? (
-          <div className="bg-white  shadow-lg rounded-lg p-8 w-full max-w-md flex flex-col gap-6 items-center">
-            <h2 className="text-2xl font-bold mb-2 text-gray-900 ">Login as</h2>
+          <div
+            className="shadow-lg rounded-lg p-8 w-full max-w-md flex flex-col gap-6 items-center"
+            style={{ backgroundColor: "#ffffffff" }}
+          >
+            <h2
+              className="text-2xl font-bold mb-2"
+              style={{ color: "#4E342E" }}
+            >
+              Login as
+            </h2>
             <div className="flex gap-4 w-full">
               <button
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded"
+                className="flex-1 font-semibold py-2 rounded transition-colors"
+                style={{
+                  backgroundColor: "#F4B6A7",
+                  color: "#4E342E",
+                  border: "2px solid #F4B6A7",
+                }}
                 onClick={() => handleRoleSelect("student")}
               >
                 Student
               </button>
               <button
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded"
+                className="flex-1 font-semibold py-2 rounded transition-colors"
+                style={{
+                  backgroundColor: "#D8BFA2",
+                  color: "#4E342E",
+                  border: "2px solid #D8BFA2",
+                }}
                 onClick={() => handleRoleSelect("teacher")}
               >
                 Teacher
@@ -60,15 +78,24 @@ export default function LoginPage() {
         ) : (
           <form
             onSubmit={handleLogin}
-            className="bg-white  shadow-lg rounded-lg p-8 w-full max-w-md flex flex-col gap-4"
+            className="shadow-lg rounded-lg p-8 w-full max-w-md flex flex-col gap-4"
+            style={{ backgroundColor: "#ffffffff" }}
           >
-            <h2 className="text-2xl font-bold mb-4 text-gray-900 ">
+            <h2
+              className="text-2xl font-bold mb-4"
+              style={{ color: "#4E342E" }}
+            >
               {step.charAt(0).toUpperCase() + step.slice(1)} Login
             </h2>
             <input
               type="text"
               placeholder="Username"
-              className="px-4 py-2 rounded border border-gray-300  bg-gray-100  text-gray-900  focus:outline-none"
+              className="px-4 py-2 rounded border focus:outline-none"
+              style={{
+                backgroundColor: "#fff5ebff",
+                color: "#8B6C53",
+                borderColor: "#D8BFA2",
+              }}
               value={username}
               onChange={e => setUsername(e.target.value)}
               disabled={loggingIn}
@@ -77,22 +104,38 @@ export default function LoginPage() {
             <input
               type="password"
               placeholder="Password"
-              className="px-4 py-2 rounded border border-gray-300  bg-gray-100  text-gray-900  focus:outline-none"
+              className="px-4 py-2 rounded border focus:outline-none"
+              style={{
+                backgroundColor: "#fff5ebff",
+                color: "#8B6C53",
+                borderColor: "#D8BFA2",
+              }}
               value={password}
               onChange={e => setPassword(e.target.value)}
               disabled={loggingIn}
             />
-            {error && <div className="text-red-500 text-sm">{error}</div>}
+            {error && (
+              <div className="text-sm" style={{ color: "#F4B6A7" }}>
+                {error}
+              </div>
+            )}
             <button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded disabled:opacity-50"
+              className="font-semibold py-2 rounded transition-colors"
+              style={{
+                backgroundColor: "#F4B6A7",
+                color: "#4E342E",
+                border: "2px solid #F4B6A7",
+                opacity: loggingIn ? 0.7 : 1,
+              }}
               disabled={loggingIn}
             >
               {loggingIn ? "Logging in..." : "Login"}
             </button>
             <button
               type="button"
-              className="text-sm text-gray-500 hover:underline mt-2"
+              className="text-sm mt-2 underline"
+              style={{ color: "#8B6C53" }}
               onClick={() => setStep(null)}
               disabled={loggingIn}
             >
