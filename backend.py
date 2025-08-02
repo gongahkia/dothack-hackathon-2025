@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 import json
 import os
 import re
@@ -6,6 +6,7 @@ from datetime import datetime
 from flask_cors import CORS
 import google.generativeai as genai
 from werkzeug.utils import secure_filename
+import generate_report
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -264,6 +265,21 @@ def generate_quiz():
         return jsonify({'error': str(e)}), 400
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+@app.route('/generate-report', methods=['POST'])
+def generate_report_endpoint():
+    try:
+        generate_report.generate_report()
+        return jsonify({'success': True, 'message': 'Report generated successfully'}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/download/report', methods=['GET', 'HEAD'])
+def download_report():
+    report_path = os.path.abspath('comprehensive_class_report.pdf')
+    if not os.path.exists(report_path):
+        return jsonify({'error': 'Report not found'}), 404
+    return send_file(report_path, as_attachment=True, mimetype='application/pdf')
 
 if __name__ == '__main__':
     app.run(port=5011)
