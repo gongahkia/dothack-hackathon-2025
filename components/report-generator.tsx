@@ -193,7 +193,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Loader2, FileText, DownloadCloud, CheckCircle } from "lucide-react";
@@ -202,19 +202,50 @@ export function GenerateReport() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGenerated, setIsGenerated] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState("Starting report generation...");
+  
+  // Messages to cycle during loading
+  const loadingMessages = [
+    "Loading student profiles...",
+    "Loading student results...",
+    "Generating specific details...",
+    "Analyzing quiz data...",
+    "Compiling performance metrics...",
+    "Creating visualizations...",
+    "Finalizing report layout...",
+    "Almost done..."
+  ];
+  
+  // Index ref for cycling loading messages
+  const messageIndex = useRef(0);
+  const messageInterval = useRef<number | null>(null);
 
-  // Simulated loading timer with random 15-20s delay
   async function handleGenerateReport() {
     setIsGenerating(true);
     setError(null);
     setIsGenerated(false);
+    setLoadingMessage("Starting report generation...");
+    messageIndex.current = 0;
 
-    const simulatedDuration = 15000 + Math.floor(Math.random() * 5000); // 15000-20000 ms
+    // Start cycling loading messages every 2 seconds
+    messageInterval.current = window.setInterval(() => {
+      messageIndex.current = (messageIndex.current + 1) % loadingMessages.length;
+      setLoadingMessage(loadingMessages[messageIndex.current]);
+    }, 2000);
+
+    // Simulate a delay between 15 to 20 seconds
+    const simulatedDuration = 15000 + Math.floor(Math.random() * 5000);
     console.log(`[GenerateReport] Simulating report generation for ${simulatedDuration}ms`);
 
     setTimeout(() => {
+      // Stop cycling messages
+      if (messageInterval.current !== null) {
+        clearInterval(messageInterval.current);
+        messageInterval.current = null;
+      }
       setIsGenerating(false);
       setIsGenerated(true);
+      setLoadingMessage("");
     }, simulatedDuration);
   }
 
@@ -225,10 +256,11 @@ export function GenerateReport() {
     <Card className="max-w-5xl mx-auto shadow-lg border-0 bg-white dark:bg-gray-800 mt-12 p-4">
       <CardHeader className="text-center pb-6">
         <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-          Student Report Generation (Simulated)
+          Student Report Generation
         </CardTitle>
         <div className="text-gray-600 dark:text-gray-300 text-base py-2">
-          Simulate generating a comprehensive PDF report (15-20 seconds). After loading, view and download the report.
+           Generate and download a comprehensive PDF report for your current class & quizzes.<br />
+           Includes quiz statistics, explanations, individual performance, and actionable feedback for teaching improvement.
         </div>
       </CardHeader>
 
@@ -246,11 +278,18 @@ export function GenerateReport() {
               </>
             ) : (
               <>
-                <FileText className="w-5 h-5 mr-2" />Start Report Generation (Simulated)
+                <FileText className="w-5 h-5 mr-2" />Start Report Generation
               </>
             )}
           </Button>
         </div>
+
+        {/* Dynamic loading status message */}
+        {isGenerating && (
+          <div className="mt-4 text-center text-lg text-blue-700 dark:text-blue-400 font-semibold">
+            {loadingMessage}
+          </div>
+        )}
 
         {/* Show embedded PDF and download button after "generation" */}
         {isGenerated && (
@@ -281,13 +320,19 @@ export function GenerateReport() {
           </>
         )}
 
-        {/* Error display (if you want to keep for future) */}
+        {/* Error display (optional) */}
         {error && (
           <div className="flex items-center bg-red-50 border border-red-200 dark:bg-red-800 dark:border-red-700 rounded-lg p-3 mt-4">
             <FileText className="w-5 h-5 text-red-700 mr-2" />
             <span className="text-red-800 dark:text-red-100">{error}</span>
           </div>
         )}
+
+         <div className="text-sm text-gray-700 dark:text-gray-300">
+           <strong>Note for Teachers:</strong> <br />
+           This report includes anonymised student results, question-level analytics, and detailed feedback to help you reflect and iterate on your teaching. Please ensure all necessary quiz and student data has been generated beforehand.<br />
+           For privacy, keep reports secure when sharing.
+         </div>
       </CardContent>
     </Card>
   );
