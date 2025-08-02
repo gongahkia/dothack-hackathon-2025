@@ -1,0 +1,63 @@
+{
+  "prompt": "i want to know about blind spots\r\n",
+  "num_quizzes": 5,
+  "questions": "tell me what blind spots are",
+  "quiz_questions": [
+    {
+      "question": "According to the 'Code of Conduct on the Road', what is the correct definition of a vehicle's 'blind spots'?",
+      "options": {
+        "a": "The areas directly behind the vehicle that are obscured by the boot and rear pillars.",
+        "b": "The areas on the right and left of the vehicle that cannot be viewed in the mirrors.",
+        "c": "The areas in front of the vehicle that are blocked from view by the bonnet.",
+        "d": "The specific points on the windscreen, such as the A-pillars, that obstruct the driver's forward vision."
+      },
+      "correct": "b",
+      "explanation": "This question assesses your basic recall of a key safety term. A 'blind spot' is correctly defined in section 129 of the handbook as any area around your vehicle that is not visible in your rear-view or side mirrors. While pillars (option D) and the vehicle's body (options A and C) do create obstructions, the term 'blind spot' specifically refers to the zones at the sides that mirrors cannot cover. This is why a physical head check is a critical, non-negotiable step before changing lanes, turning, or overtaking."
+    },
+    {
+      "question": "You are driving in the middle lane of a three-lane expressway and intend to move to the left lane. After checking your mirrors and signalling your intention, what is the immediate, critical action you must take before changing lanes?",
+      "options": {
+        "a": "Turn your head to look over your left shoulder.",
+        "b": "Accelerate slightly to match the speed of the traffic in the left lane.",
+        "c": "Check your rear-view mirror one more time.",
+        "d": "Lean forward to get a wider angle of view from your left side mirror."
+      },
+      "correct": "a",
+      "explanation": "This question tests the application of the blind spot rule. Section 129 clearly states, 'You have to turn your head and look over your shoulder to the left or the right to check for traffic in the 'blind spots''. Simply checking mirrors again (option C) or adjusting your posture (option D) is insufficient, as a vehicle (especially a motorcycle) could be hidden from the mirror's view. The correct and safest procedure is Mirror-Signal-Blind Spot Check-Manoeuvre. The physical head check is the final confirmation that the way is clear before you begin to move over."
+    },
+    {
+      "question": "A driver who fails to check their blind spots before making a turn at a junction poses the greatest and most immediate risk to which of the following road users?",
+      "options": {
+        "a": "Oncoming vehicles from the opposite direction.",
+        "b": "Pedestrians waiting to cross at the next traffic light.",
+        "c": "Motorcyclists or cyclists filtering alongside the car.",
+        "d": "The vehicle following directly behind."
+      },
+      "correct": "c",
+      "explanation": "This question requires you to analyze the specific dangers of neglecting blind spot checks in different contexts. While failing to check blind spots is always dangerous, motorcyclists and cyclists are particularly vulnerable because their smaller size allows them to be completely hidden in a car's blind spot. As highlighted in section 166, when a car turns, it can easily collide with a cyclist or motorcyclist who is positioned alongside it. This emphasizes the need for extra vigilance for vulnerable road users, which goes beyond just looking for other cars."
+    },
+    {
+      "question": "Based on the 'Correct method of overtaking' illustrated on page 52, at which point in the sequence should you check your blind spot?",
+      "options": {
+        "a": "Before checking your mirrors or signalling.",
+        "b": "Immediately after signalling your intention and before moving right.",
+        "c": "While you are moving into the other lane.",
+        "d": "After you have completed the overtaking manoeuvre."
+      },
+      "correct": "b",
+      "explanation": "This question assesses your ability to integrate a safety check into a multi-step procedure. The correct sequence for overtaking is designed for maximum safety and communication. You first check mirrors to assess the situation, then signal to inform other road users of your intent. The very next step, as shown in the handbook (Step 4: CHECK BLIND SPOT), is the physical head check. This is your final verification that the space you intend to move into is clear *before* you commit to the manoeuvre (Step 5: MOVE RIGHT). Checking at any other time is either premature or too late."
+    },
+    {
+      "question": "Section 129 of the handbook lists several manoeuvres that require a blind spot check. Which of the following lists BEST represents the situations requiring this critical safety check?",
+      "options": {
+        "a": "Slowing down, stopping, and reversing.",
+        "b": "Changing lane, overtaking, turning, and stopping.",
+        "c": "Entering a roundabout, parking, and using the horn.",
+        "d": "Driving on an expressway, approaching a school, and driving in the rain."
+      },
+      "correct": "b",
+      "explanation": "This question tests your comprehension of the scope of the blind spot rule. Section 129 explicitly lists the required actions: '...check for traffic in the 'blind spots' before changing lane, overtaking, turning and stopping.' While other options list important driving actions, they do not all necessitate a shoulder check for the side blind spots in the same way. This rule highlights that any lateral movement or change in status (like stopping by the kerb) requires a comprehensive check of your surroundings, for which mirrors alone are inadequate."
+    }
+  ],
+  "timestamp": "2025-08-02T09:16:54.586038"
+}
