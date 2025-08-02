@@ -37,10 +37,10 @@ export function HeroSection() {
 
       {/* Main Content */}
       <div className="relative z-10 text-center max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900  mb-6 leading-tight"
+        <h1 className="font-kualine text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900  mb-6 leading-tight"
             style={{ textShadow: "2px 2px 4px rgba(0, 0, 0, 0.4)" }}>
           Whip Up
-          <span className="block font-maghfirea" style={{ color: "#8B6C53" }}>Better Quizzes</span>
+            <span className="block font-kualine" style={{ color: "#8B6C53" }}>Better Quizzes</span>
           <span className="block text-gray-900 ">with QuizBatter</span>
         </h1>
 

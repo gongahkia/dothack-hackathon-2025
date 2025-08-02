@@ -11,6 +11,7 @@ export default {
     extend: {
       fontFamily: {
         maghfirea: ["Maghfirea", "ui-sans-serif", "system-ui", "sans-serif"],
+        kualine: ["Kualine", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
