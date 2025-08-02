@@ -43,6 +43,8 @@ def generate(prompt, num_quizzes, questions=None, pdf_path=None):
         model = genai.GenerativeModel('gemini-2.5-pro')
         print("[generate] Initialized Gemini Pro model 'gemini-2.5-pro'.")
 
+        # --- system prompt omitted for brevity; same as before ---
+
         system_prompt = """You are Dr. Sarah Chen, an expert educational psychologist and assessment specialist with 15 years of experience in curriculum development and learning analytics. You specialize in creating engaging, pedagogically sound assessments that promote deep learning and critical thinking.
 
 ## TASK
@@ -86,7 +88,7 @@ Before generating each question, think through:
 - How can I make the explanation educational?
 - Does this question contribute to deeper understanding?
 """
-        # Prepare content parts with chain of thought reasoning
+
         prompt_text = f"""Generate {num_quizzes} high-quality quiz questions for the lecture content: {prompt}
 
 ## QUESTION DESIGN PROCESS
@@ -118,11 +120,11 @@ IMPORTANT: Return ONLY the JSON array. No additional text, explanations, or comm
 ## CONTENT INTEGRATION
 If student questions were provided, incorporate those concepts and address any knowledge gaps they reveal.
 """
+
         if questions:
             prompt_text += f"\n\n## STUDENT QUESTIONS TO ADDRESS\n{questions}\n\nEnsure your questions cover these concepts and address any misconceptions revealed in the student questions."
             print(f"[generate] Added student questions to prompt.")
 
-        # Create the full prompt with system instruction
         full_prompt = f"{system_prompt}\n\n{prompt_text}"
         print("[generate] Prepared full prompt for AI generation.")
 
@@ -155,7 +157,7 @@ If student questions were provided, incorporate those concepts and address any k
         response_text = response.text
         print("[generate] Received response from AI. Length:", len(response_text))
 
-        # Try to extract JSON if the response contains extra text
+        # Extract JSON array from AI response if extra text present
         json_match = re.search(r'\[.*\]', response_text, re.DOTALL)
         if json_match:
             response_text = json_match.group(0)
@@ -217,10 +219,10 @@ def generate_quiz():
                 os.remove(pdf_path)
                 print(f"[generate_quiz] Uploaded file cleaned up from disk: {pdf_path}")
 
-            # Debug: Print the raw response (truncated if too long)
+            # Print the raw response (truncated for display if lengthy)
             print(f"[generate_quiz] Raw AI response sample: {result[:400]}")
 
-            # Try to parse JSON
+            # Try to parse JSON result
             try:
                 parsed_result = json.loads(result)
 
@@ -238,11 +240,19 @@ def generate_quiz():
                     f.flush()
                     os.fsync(f.fileno())
                 print("[generate_quiz] ✅ Quiz response saved to quiz_response.json (flushed)")
-                return jsonify(parsed_result)
+
+                # Return both parsed result and raw_response key as requested
+                return jsonify({
+                    "quiz_questions": parsed_result,
+                    "raw_response": result
+                })
             except json.JSONDecodeError as e:
                 print(f"[generate_quiz][JSONDecodeError] {str(e)}")
                 print(f"[generate_quiz] Response content sample: {result[:300]}")
-                return jsonify({'error': f'Invalid JSON response from AI. Raw response: {result[:200]}...'}), 500
+                return jsonify({
+                    'error': f'Invalid JSON response from AI. Raw response: {result[:200]}...',
+                    'raw_response': result
+                }), 500
         except Exception as e:
             print(f"[generate_quiz][Error] Exception in generate function: {str(e)}")
             return jsonify({'error': f'Error in generate function: {str(e)}'}), 500
