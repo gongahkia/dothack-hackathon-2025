@@ -3,10 +3,16 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Navigation } from "@/components/navigation";
+import { auth } from "@/lib/firebase";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from "firebase/auth";
 
 export default function LoginPage() {
   const [step, setStep] = useState<null | "student" | "teacher">(null);
-  const [username, setUsername] = useState("");
+  const [mode, setMode] = useState<"login" | "register">("login"); // Added mode toggle
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
   const [error, setError] = useState("");
@@ -14,8 +20,9 @@ export default function LoginPage() {
 
   const handleRoleSelect = (role: "student" | "teacher") => {
     setStep(role);
+    setMode("login");
     setError("");
-    setUsername("");
+    setEmail("");
     setPassword("");
   };
 
@@ -24,15 +31,42 @@ export default function LoginPage() {
     setLoggingIn(true);
     setError("");
 
-    // Simulate login - replace with real authentication logic
-    setTimeout(() => {
-      if (username && password) {
-        router.push("/dashboard");
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push("/dashboard");
+    } catch (err: any) {
+      if (err.code === "auth/user-not-found") {
+        // Prompt to register if user not found
+        setError("User not found. Would you like to register?");
+        setMode("register");
+      } else if (err.code === "auth/wrong-password") {
+        setError("Incorrect password.");
       } else {
-        setError("Please enter both username and password.");
-        setLoggingIn(false);
+        setError("Login failed. Please try again.");
       }
-    }, 1200);
+      setLoggingIn(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoggingIn(true);
+    setError("");
+
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      router.push("/dashboard");
+    } catch (err: any) {
+      if (err.code === "auth/email-already-in-use") {
+        setError("Email already in use. Please login.");
+        setMode("login");
+      } else if (err.code === "auth/weak-password") {
+        setError("Password should be at least 6 characters.");
+      } else {
+        setError("Registration failed. Please try again.");
+      }
+      setLoggingIn(false);
+    }
   };
 
   return (
@@ -77,7 +111,7 @@ export default function LoginPage() {
           </div>
         ) : (
           <form
-            onSubmit={handleLogin}
+            onSubmit={mode === "login" ? handleLogin : handleRegister}
             className="shadow-lg rounded-lg p-8 w-full max-w-md flex flex-col gap-4"
             style={{ backgroundColor: "#ffffffff" }}
           >
@@ -85,19 +119,20 @@ export default function LoginPage() {
               className="text-2xl font-bold mb-4"
               style={{ color: "#4E342E" }}
             >
-              {step.charAt(0).toUpperCase() + step.slice(1)} Login
+              {step.charAt(0).toUpperCase() + step.slice(1)}{" "}
+              {mode === "login" ? "Login" : "Register"}
             </h2>
             <input
-              type="text"
-              placeholder="Username"
+              type="email"
+              placeholder="Email"
               className="px-4 py-2 rounded border focus:outline-none"
               style={{
                 backgroundColor: "#fff5ebff",
                 color: "#8B6C53",
                 borderColor: "#D8BFA2",
               }}
-              value={username}
-              onChange={e => setUsername(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               disabled={loggingIn}
               autoFocus
             />
@@ -111,7 +146,7 @@ export default function LoginPage() {
                 borderColor: "#D8BFA2",
               }}
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               disabled={loggingIn}
             />
             {error && (
@@ -130,13 +165,38 @@ export default function LoginPage() {
               }}
               disabled={loggingIn}
             >
-              {loggingIn ? "Logging in..." : "Login"}
+              {loggingIn
+                ? mode === "login"
+                  ? "Logging in..."
+                  : "Registering..."
+                : mode === "login"
+                ? "Login"
+                : "Register"}
             </button>
             <button
               type="button"
               className="text-sm mt-2 underline"
               style={{ color: "#8B6C53" }}
-              onClick={() => setStep(null)}
+              onClick={() =>
+                setMode((prev) => (prev === "login" ? "register" : "login"))
+              }
+              disabled={loggingIn}
+            >
+              {mode === "login"
+                ? "Don't have an account? Register here"
+                : "Already have an account? Login here"}
+            </button>
+            <button
+              type="button"
+              className="text-sm mt-2 underline"
+              style={{ color: "#8B6C53" }}
+              onClick={() => {
+                setStep(null);
+                setMode("login");
+                setError("");
+                setEmail("");
+                setPassword("");
+              }}
               disabled={loggingIn}
             >
               Back
