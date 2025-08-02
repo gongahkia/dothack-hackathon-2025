@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 import json
 import os
 import re
+from datetime import datetime
 from flask_cors import CORS
 import google.generativeai as genai
 from werkzeug.utils import secure_filename
@@ -11,7 +12,10 @@ CORS(app)  # Enable CORS for all routes
 
 # Configure upload folder
 UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'pdf', 'txt', 'docx', 'doc', 'pptx', 'ppt', 'xls', 'xlsx', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'ico', 'webp'}
+ALLOWED_EXTENSIONS = {
+    'pdf', 'txt', 'docx', 'doc', 'pptx', 'ppt', 'xls', 'xlsx', 'csv',
+    'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'ico', 'webp'
+}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Create uploads directory if it doesn't exist
@@ -82,7 +86,6 @@ Before generating each question, think through:
 - How can I make the explanation educational?
 - Does this question contribute to deeper understanding?
 """
-
         # Prepare content parts with chain of thought reasoning
         prompt_text = f"""Generate {num_quizzes} high-quality quiz questions for the lecture content: {prompt}
 
@@ -115,11 +118,11 @@ IMPORTANT: Return ONLY the JSON array. No additional text, explanations, or comm
 ## CONTENT INTEGRATION
 If student questions were provided, incorporate those concepts and address any knowledge gaps they reveal.
 """
-        
         if questions:
             prompt_text += f"\n\n## STUDENT QUESTIONS TO ADDRESS\n{questions}\n\nEnsure your questions cover these concepts and address any misconceptions revealed in the student questions."
             print(f"[generate] Added student questions to prompt.")
 
+        # Create the full prompt with system instruction
         full_prompt = f"{system_prompt}\n\n{prompt_text}"
         print("[generate] Prepared full prompt for AI generation.")
 
@@ -140,27 +143,20 @@ If student questions were provided, incorporate those concepts and address any k
                     [full_prompt, {"mime_type": "application/pdf", "data": pdf_content}],
                     generation_config=generation_config
                 )
+                print("[generate] PDF provided. AI content generated.")
         else:
             print("[generate] No PDF provided. Sending prompt text request to AI...")
             response = model.generate_content(
                 full_prompt,
                 generation_config=generation_config
             )
+            print("[generate] AI content generated for text prompt.")
 
         response_text = response.text
-        print("[generate] Received response from AI.")
+        print("[generate] Received response from AI. Length:", len(response_text))
 
-        json_match = re.search(r'(\[.*\])', response_text, re.DOTALL)
-        if json_match:
-            # Try to parse the matched JSON section
-            candidate_json = json_match.group(1)
-            try:
-                parsed = json.loads(candidate_json)
-                response_text = candidate_json
-            except json.JSONDecodeError:
-                # If parse fails, keep original text to trigger error downstream
-                pass
-
+        # Try to extract JSON if the response contains extra text
+        json_match = re.search(r'\[.*\]', response_text, re.DOTALL)
         if json_match:
             response_text = json_match.group(0)
             print("[generate] Extracted JSON array from AI response.")
@@ -170,8 +166,8 @@ If student questions were provided, incorporate those concepts and address any k
         return response_text
 
     except Exception as e:
-        error_msg = f"Error in generate function: {str(e)}"
-        print(f"[generate][Error] {error_msg}")
+        error_msg = f"[generate][Error] Error in generate function: {str(e)}"
+        print(error_msg)
         raise Exception(error_msg)
 
 @app.route('/', methods=['GET'])
@@ -215,15 +211,38 @@ def generate_quiz():
 
         try:
             result = generate(prompt, num_quizzes, questions, pdf_path)
-
+            print(f"[generate_quiz] Raw AI response received, length: {len(result)}")
+            # Clean up uploaded file if it exists
             if pdf_path and os.path.exists(pdf_path):
                 os.remove(pdf_path)
                 print(f"[generate_quiz] Uploaded file cleaned up from disk: {pdf_path}")
 
-                print("[generate_quiz] Raw AI response received. Returning raw text without JSON parsing.")
-                print(result)
-                return jsonify({'raw_response': result})
+            # Debug: Print the raw response (truncated if too long)
+            print(f"[generate_quiz] Raw AI response sample: {result[:400]}")
 
+            # Try to parse JSON
+            try:
+                parsed_result = json.loads(result)
+
+                # Save quiz response to JSON file for report generation
+                quiz_data = {
+                    "prompt": prompt,
+                    "num_quizzes": num_quizzes,
+                    "questions": questions,
+                    "quiz_questions": parsed_result,
+                    "timestamp": datetime.now().isoformat()
+                }
+
+                with open("quiz_response.json", "w", encoding="utf-8") as f:
+                    json.dump(quiz_data, f, indent=2, ensure_ascii=False)
+                    f.flush()
+                    os.fsync(f.fileno())
+                print("[generate_quiz] ✅ Quiz response saved to quiz_response.json (flushed)")
+                return jsonify(parsed_result)
+            except json.JSONDecodeError as e:
+                print(f"[generate_quiz][JSONDecodeError] {str(e)}")
+                print(f"[generate_quiz] Response content sample: {result[:300]}")
+                return jsonify({'error': f'Invalid JSON response from AI. Raw response: {result[:200]}...'}), 500
         except Exception as e:
             print(f"[generate_quiz][Error] Exception in generate function: {str(e)}")
             return jsonify({'error': f'Error in generate function: {str(e)}'}), 500
@@ -237,4 +256,4 @@ def generate_quiz():
 
 if __name__ == '__main__':
     print("[Startup] Starting Flask server on port 5011...")
-    app.run(debug=True, port=5011)
+    app.run(port=5011)
