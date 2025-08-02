@@ -37,14 +37,14 @@ export function HeroSection() {
 
       {/* Main Content */}
       <div className="relative z-10 text-center max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight"
+        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900  mb-6 leading-tight"
             style={{ textShadow: "2px 2px 4px rgba(0, 0, 0, 0.4)" }}>
           Whip Up
           <span className="block" style={{ color: "#8B6C53" }}>Better Quizzes</span>
-          <span className="block text-gray-900 dark:text-white">with QuizBatter</span>
+          <span className="block text-gray-900 ">with QuizBatter</span>
         </h1>
 
-        <p className="text-xl sm:text-2xl text-gray-900 dark:text-white mb-8 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-xl sm:text-2xl text-gray-900  mb-8 max-w-2xl mx-auto leading-relaxed">
           Let QuizBatter help you transform lecture slides and content into personalised quizzes!
         </p>
 
@@ -71,8 +71,8 @@ export function HeroSection() {
           </Button>
         </div>
 
-        <div className="mt-12 text-sm text-gray-900 dark:text-white">
-          Powered by Google Gemini AI • Free to use
+        <div className="mt-12 text-sm text-gray-900 ">
+          Powered by Google Gemini AI • Free to use • No signup required
         </div>
       </div>
     </section>

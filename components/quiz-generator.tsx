@@ -195,9 +195,9 @@ export function QuizBattererator() {
 
   // Default: show the quiz generation form
   return (
-    <Card className="border-0 shadow-lg bg-white dark:bg-gray-800 border dark:border-gray-700">
+    <Card className="border-0 shadow-lg bg-white  border ">
       <CardHeader className="text-center pb-8">
-        <CardTitle className="text-2xl font-semibold text-gray-900 dark:text-white">
+        <CardTitle className="text-2xl font-semibold text-gray-900 ">
           Quiz Generation Form
         </CardTitle>
       </CardHeader>
@@ -209,7 +209,7 @@ export function QuizBattererator() {
             <div className="space-y-2">
               <Label
                 htmlFor="prompt"
-                className="text-base font-medium text-gray-900 dark:text-white"
+                className="text-base font-medium text-gray-900 "
               >
                 Lecture Content or Topic *
               </Label>
@@ -218,7 +218,7 @@ export function QuizBattererator() {
                 placeholder="Enter your lecture content, topic, or key concepts you want to create quizzes about..."
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                className="min-h-40 resize-none border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="min-h-40 resize-none border-gray-200  focus:border-blue-500 focus:ring-blue-500 bg-white  text-gray-900 "
                 required
               />
             </div>
@@ -227,11 +227,11 @@ export function QuizBattererator() {
             <div className="space-y-2">
               <Label
                 htmlFor="slidesFile"
-                className="text-base font-medium text-gray-900 dark:text-white"
+                className="text-base font-medium text-gray-900 "
               >
                 Upload Your Slides
               </Label>
-              <div className="border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-300 dark:hover:border-gray-500 transition-colors bg-gray-50 dark:bg-gray-700/50 min-h-40 flex flex-col justify-center">
+              <div className="border-2 border-dashed border-gray-200  rounded-lg p-6 text-center hover:border-gray-300  transition-colors bg-gray-50  min-h-40 flex flex-col justify-center">
                 <input
                   id="slidesFile"
                   type="file"
@@ -245,10 +245,10 @@ export function QuizBattererator() {
                       <>
                         <CheckCircle className="w-10 h-10 text-green-500" />
                         <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          <p className="text-sm font-medium text-gray-900 ">
                             {slidesFile.name}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className="text-xs text-gray-500 ">
                             Click to change slides
                           </p>
                         </div>
@@ -257,10 +257,10 @@ export function QuizBattererator() {
                       <>
                         <Presentation className="w-10 h-10 text-blue-500" />
                         <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          <p className="text-sm font-medium text-gray-900 ">
                             Upload Presentation Slides
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className="text-xs text-gray-500 ">
                             PowerPoint, PDF, Keynote supported
                           </p>
                         </div>
@@ -276,7 +276,7 @@ export function QuizBattererator() {
           <div className="space-y-2">
             <Label
               htmlFor="numQuizzes"
-              className="text-base font-medium text-gray-900 dark:text-white"
+              className="text-base font-medium text-gray-900 "
             >
               Number of Questions *
             </Label>
@@ -287,7 +287,7 @@ export function QuizBattererator() {
               max={20}
               value={numQuizzes}
               onChange={(e) => setNumQuizzes(Number.parseInt(e.target.value) || 5)}
-              className="border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white max-w-xs"
+              className="border-gray-200  focus:border-blue-500 focus:ring-blue-500 bg-white  text-gray-900  max-w-xs"
               required
             />
           </div>
@@ -296,7 +296,7 @@ export function QuizBattererator() {
           <div className="space-y-2">
             <Label
               htmlFor="questions"
-              className="text-base font-medium text-gray-900 dark:text-white"
+              className="text-base font-medium text-gray-900 "
             >
               Specific Questions to Cover (Optional)
             </Label>
@@ -305,7 +305,7 @@ export function QuizBattererator() {
               placeholder="Enter specific questions from students or topics you want to ensure are covered in the quiz..."
               value={questions}
               onChange={(e) => setQuestions(e.target.value)}
-              className="min-h-24 resize-none border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="min-h-24 resize-none border-gray-200  focus:border-blue-500 focus:ring-blue-500 bg-white  text-gray-900 "
             />
           </div>
 
@@ -313,11 +313,11 @@ export function QuizBattererator() {
           <div className="space-y-2">
             <Label
               htmlFor="file"
-              className="text-base font-medium text-gray-900 dark:text-white"
+              className="text-base font-medium text-gray-900 "
             >
               Upload Additional Materials (Optional)
             </Label>
-            <div className="border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-300 dark:hover:border-gray-500 transition-colors bg-gray-50 dark:bg-gray-700/50">
+            <div className="border-2 border-dashed border-gray-200  rounded-lg p-6 text-center hover:border-gray-300  transition-colors bg-gray-50 ">
               <input
                 id="file"
                 type="file"
@@ -331,10 +331,10 @@ export function QuizBattererator() {
                     <>
                       <CheckCircle className="w-12 h-12 text-green-500" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        <p className="text-sm font-medium text-gray-900 ">
                           {file.name}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-gray-500 ">
                           Click to change file
                         </p>
                       </div>
@@ -343,10 +343,10 @@ export function QuizBattererator() {
                     <>
                       <Upload className="w-12 h-12 text-gray-400" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        <p className="text-sm font-medium text-gray-900 ">
                           Click to upload or drag and drop
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-gray-500 ">
                           Documents, spreadsheets, images supported
                         </p>
                       </div>
@@ -359,8 +359,8 @@ export function QuizBattererator() {
 
           {/* File Priority Notice */}
           {slidesFile && file && (
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-sm text-blue-700 dark:text-blue-300">
+            <div className="p-3 bg-blue-50  border border-blue-200  rounded-lg">
+              <p className="text-sm text-blue-700 ">
                 <strong>Note:</strong> Your slides will be used as the primary source for quiz generation. Additional
                 materials will be used as supplementary content.
               </p>
@@ -369,8 +369,8 @@ export function QuizBattererator() {
 
           {/* Error Message */}
           {error && (
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <div className="p-4 bg-red-50  border border-red-200  rounded-lg">
+              <p className="text-sm text-red-600 ">{error}</p>
             </div>
           )}
 

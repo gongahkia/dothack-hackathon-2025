@@ -78,13 +78,13 @@ const teamMembers = [
 
 export default function TeamPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-white ">
       <Navigation />
       <main className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-6">Meet Kitchen</h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900  mb-6">Meet Kitchen</h1>
+            <p className="text-xl text-gray-600  max-w-2xl mx-auto">
               We're a passionate group of educators, engineers, and researchers dedicated to revolutionizing learning
               through AI.
             </p>
@@ -94,7 +94,7 @@ export default function TeamPage() {
             {teamMembers.map((member, index) => (
               <Card
                 key={index}
-                className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white dark:bg-gray-800"
+                className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white "
               >
                 <CardContent className="p-8 text-center">
                 <div className="mb-6 flex justify-center gap-4">
@@ -116,18 +116,18 @@ export default function TeamPage() {
                   )}
                 </div>
 
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{member.name}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900  mb-2">{member.name}</h3>
 
-                  <p className="text-blue-600 dark:text-blue-400 font-medium mb-4">{member.role}</p>
+                  <p className="text-blue-600  font-medium mb-4">{member.role}</p>
 
-                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-6">{member.bio}</p>
+                  <p className="text-gray-600  text-sm leading-relaxed mb-6">{member.bio}</p>
 
                   <div className="flex flex-wrap gap-2 justify-center mb-6">
                     {member.skills.map((skill, skillIndex) => (
                       <Badge
                         key={skillIndex}
                         variant="secondary"
-                        className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                        className="text-xs bg-gray-100  text-gray-700 "
                       >
                         {skill}
                       </Badge>
@@ -138,7 +138,7 @@ export default function TeamPage() {
                     {member.social.linkedin && (
                       <a
                         href={member.social.linkedin}
-                        className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                        className="text-gray-400 hover:text-blue-600  transition-colors"
                       >
                         <Linkedin className="w-5 h-5" />
                       </a>
@@ -151,7 +151,7 @@ export default function TeamPage() {
                     {member.social.github && (
                       <a
                         href={member.social.github}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                        className="text-gray-400 hover:text-gray-600  transition-colors"
                       >
                         <Github className="w-5 h-5" />
                       </a>
@@ -162,9 +162,9 @@ export default function TeamPage() {
             ))}
           </div>
 
-          <div className="mt-16 bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 md:p-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 text-center">Join Our Mission</h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed text-center max-w-3xl mx-auto mb-8">
+          <div className="mt-16 bg-gray-50  rounded-2xl p-8 md:p-12">
+            <h2 className="text-3xl font-bold text-gray-900  mb-6 text-center">Join Our Mission</h2>
+            <p className="text-lg text-gray-600  leading-relaxed text-center max-w-3xl mx-auto mb-8">
               We're always looking for talented individuals who share our passion for education and technology. If
               you're interested in making a meaningful impact on how people learn, we'd love to hear from you.
             </p>

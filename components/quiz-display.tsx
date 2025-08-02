@@ -84,12 +84,12 @@ export function QuizDisplay({ quizzes, onReset }: QuizDisplayProps) {
 
     return (
       <div className="space-y-6">
-        <Card className="border-0 shadow-lg bg-white dark:bg-gray-800 border dark:border-gray-700">
+        <Card className="border-0 shadow-lg bg-white  border ">
           <CardHeader className="text-center pb-8">
-            <CardTitle className="text-3xl font-bold text-gray-900 dark:text-white">Quiz Complete!</CardTitle>
+            <CardTitle className="text-3xl font-bold text-gray-900 ">Quiz Complete!</CardTitle>
             <div className="mt-4">
-              <div className="text-6xl font-bold text-blue-600 dark:text-blue-400 mb-2">{percentage}%</div>
-              <p className="text-xl text-gray-600 dark:text-gray-300">
+              <div className="text-6xl font-bold text-blue-600  mb-2">{percentage}%</div>
+              <p className="text-xl text-gray-600 ">
                 You scored {score} out of {quizzes.length} questions correctly
               </p>
             </div>
@@ -109,7 +109,7 @@ export function QuizDisplay({ quizzes, onReset }: QuizDisplayProps) {
                         <XCircle className="w-6 h-6 text-red-500 mt-0.5 flex-shrink-0" />
                       )}
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 dark:text-white mb-2">
+                        <h3 className="font-medium text-gray-900  mb-2">
                           Question {index + 1}: {quiz.Question}
                         </h3>
                         <div className="space-y-1 text-sm">
@@ -169,7 +169,7 @@ export function QuizDisplay({ quizzes, onReset }: QuizDisplayProps) {
         />
       </div>
 
-      <Card className="border-0 shadow-lg bg-white dark:bg-gray-800 border dark:border-gray-700">
+      <Card className="border-0 shadow-lg bg-white  border ">
         <CardHeader>
           <div className="flex justify-between items-center">
             <Badge variant="secondary" className="text-sm">
@@ -189,8 +189,8 @@ export function QuizDisplay({ quizzes, onReset }: QuizDisplayProps) {
                 onClick={() => handleAnswerSelect(option)}
                 className={`w-full p-4 text-left border-2 rounded-lg transition-all duration-200 ${
                   selectedAnswer === option
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100"
-                    : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+                    ? "border-blue-500 bg-blue-50  text-blue-900 "
+                    : "border-gray-200  hover:border-gray-300  hover:bg-gray-50  text-gray-900 "
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -214,11 +214,11 @@ export function QuizDisplay({ quizzes, onReset }: QuizDisplayProps) {
               </Button>
 
               {showExplanation && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-                  <p className="text-sm text-blue-900 dark:text-blue-100">
+                <div className="p-4 bg-blue-50  border border-blue-200  rounded-lg">
+                  <p className="text-sm text-blue-900 ">
                     <span className="font-medium">Correct Answer:</span> {currentQuizData.Correct}
                   </p>
-                  <p className="text-sm text-blue-800 dark:text-blue-200 mt-2">
+                  <p className="text-sm text-blue-800  mt-2">
                     <span className="font-medium">Explanation:</span> {currentQuizData.Explanation}
                   </p>
                 </div>

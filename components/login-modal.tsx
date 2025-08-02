@@ -15,7 +15,7 @@ export function LoginModal({ onClose, onLogin }: LoginModalProps) {
         backgroundPosition: "center",
       }}
     >
-      <div className="relative bg-white dark:bg-gray-800 rounded-lg p-8 max-w-sm w-full text-center z-10 shadow-lg">
+      <div className="relative bg-white  rounded-lg p-8 max-w-sm w-full text-center z-10 shadow-lg">
         {/* Logo centered */}
         <img
           src="/images/quizbatter.png"
@@ -23,7 +23,7 @@ export function LoginModal({ onClose, onLogin }: LoginModalProps) {
           className="mx-auto mb-6 w-50 h-40 object-contain"
         />
 
-        <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">
+        <h2 className="text-xl font-semibold mb-6 text-gray-900 ">
           Select Account Type:
         </h2>
 
