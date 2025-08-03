@@ -32,7 +32,7 @@ make
                     <sub><b>Richard Lei</b></sub>
                 </a>
                 <br />
-                <sub><a href="./Backend/">Backend<a></sub>
+                <sub><a href="./Backend/">Backend,<br>Prompt Engineering<a></sub>
             </td>
             <td align="center">
                 <a href="https://github.com/gongahkia">
